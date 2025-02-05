@@ -32,12 +32,14 @@ const Dashboard = () => {
   const bestSellers = analytics.best_sellers || [];
   const sentimentAnalysis = analytics.sentiment_analysis || [];
   const weatherImpact = analytics.weather_impact || [];
+  const futureRevenue = analytics.future_revenue || [];
 
   // ✅ Ensure data exists before rendering charts
   const hasRevenueData = revenueTrends.length > 0;
   const hasBestSellersData = bestSellers.length > 0;
   const hasSentimentData = sentimentAnalysis.length > 0;
   const hasWeatherImpactData = weatherImpact.length > 0;
+  const hasFutureRevenueData = futureRevenue.length > 0;
 
   // ✅ Calculate Key Metrics
   const totalRevenue = hasRevenueData
@@ -49,6 +51,10 @@ const Dashboard = () => {
   const avgSentiment = hasSentimentData
     ? (sentimentAnalysis.reduce((sum, item) => sum + item.sentiment, 0) / sentimentAnalysis.length).toFixed(2)
     : "N/A";
+
+  // ✅ Best & Worst Menu Items
+  const bestMenu = analytics.best_menu || "N/A";
+  const worstMenu = analytics.worst_menu || "N/A";
 
   // 📊 Revenue Trends Chart Data
   const revenueTrendsData = hasRevenueData
@@ -109,6 +115,20 @@ const Dashboard = () => {
       }
     : null;
 
+  // 📈 Future Revenue Prediction Data
+  const futureRevenueData = hasFutureRevenueData
+    ? {
+        labels: futureRevenue.map((item) => `${item.date} (${item.weather_condition})`),
+        datasets: [
+          {
+            label: "Predicted Revenue",
+            data: futureRevenue.map((item) => item.predicted_revenue),
+            backgroundColor: "rgba(153, 102, 255, 0.6)",
+          },
+        ],
+      }
+    : null;
+
   return (
     <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
       <h2 style={{ textAlign: "center" }}>📊 Analytics Dashboard</h2>
@@ -120,12 +140,12 @@ const Dashboard = () => {
           <p style={{ fontSize: "24px", fontWeight: "bold", color: "#2c3e50" }}>${totalRevenue}</p>
         </div>
         <div style={{ padding: "10px", backgroundColor: "#f3f4f6", borderRadius: "8px", textAlign: "center" }}>
-          <h3>Best-Selling Item</h3>
-          <p style={{ fontSize: "24px", fontWeight: "bold", color: "#27ae60" }}>{bestSellingItem}</p>
+          <h3>🏆 Best Menu Item</h3>
+          <p style={{ fontSize: "24px", fontWeight: "bold", color: "#27ae60" }}>{bestMenu}</p>
         </div>
         <div style={{ padding: "10px", backgroundColor: "#f3f4f6", borderRadius: "8px", textAlign: "center" }}>
-          <h3>Avg. Sentiment Score</h3>
-          <p style={{ fontSize: "24px", fontWeight: "bold", color: "#e67e22" }}>{avgSentiment}</p>
+          <h3>🥶 Worst Menu Item</h3>
+          <p style={{ fontSize: "24px", fontWeight: "bold", color: "#e74c3c" }}>{worstMenu}</p>
         </div>
       </div>
 
@@ -149,6 +169,11 @@ const Dashboard = () => {
         <div>
           <h3>🌤️ Weather Impact on Sales</h3>
           {hasWeatherImpactData ? <Bar data={weatherImpactData} /> : <p>No weather impact data available.</p>}
+        </div>
+
+        <div style={{ gridColumn: "1 / span 2" }}>
+          <h3>📈 Future Revenue Prediction</h3>
+          {hasFutureRevenueData ? <Line data={futureRevenueData} /> : <p>No prediction data available.</p>}
         </div>
       </div>
     </div>
