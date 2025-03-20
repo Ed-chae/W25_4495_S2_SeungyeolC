@@ -1,114 +1,125 @@
-# **Intelligent Business Analytics System**
+#  Intelligent Business Analytics System 
 
-## **Project Overview**
-The **Intelligent Business Analytics System** is a data-driven application designed to analyze sales performance, customer sentiment, and weather impact on revenue. It provides insights through interactive visualizations and predictive revenue forecasting based on historical data.
-
----
-
-## **Features**
--  **Excel File Upload**: Upload sales data for processing and analysis.
--  **Revenue Trends**: Track daily revenue fluctuations over time.
--  **Best-Selling Items**: Identify top-selling menu items based on sales volume.
--  **Customer Sentiment Analysis**: Evaluate positive and negative reviews for each menu item.
--  **Weather Impact Analysis**: Assess how different weather conditions affect sales.
--  **Revenue Forecasting**: Predict the next 7 days' revenue based on past trends and weather conditions.
+##  Project Overview
+The **Intelligent Business Analytics System** is a powerful AI-driven platform designed to analyze sales data, predict revenue, detect anomalies, and provide insights into customer sentiment, weather impact, and product recommendations. The system integrates **FastAPI (backend)** and **React (frontend)** with **AI-powered analytics** using **Prophet, LSTM, K-Means, and sentiment analysis models**.
 
 ---
 
-## **Tech Stack**
-- **Backend**: FastAPI, PostgreSQL, SQLAlchemy, Pandas, SpaCy, Scikit-learn
-- **Frontend**: React.js, Chart.js, Axios
-- **Deployment**: Uvicorn, Node.js
+##  **Key Features**
+### **1️ File Upload & Data Processing**  
+-  Users can upload **Excel sales data** (`.xlsx`).  
+-  The backend processes data and stores it in **PostgreSQL**.
+
+### ** AI-Powered Sentiment Analysis**  
+-  Classifies **customer reviews** as **positive or negative** using **DistilBERT**.  
+-  **Visualized in charts** in the frontend.
+
+### ** AI-Based Revenue Forecasting**  
+-  **Forecasts future revenue trends** using **Prophet (Time Series)** and **LSTM (Deep Learning)**.  
+-  Displays **predicted sales trends** in React.
+
+### ** Weather Impact Analysis on Revenue**  
+-  Analyzes the effect of **weather conditions** on sales.  
+-  Uses **OpenWeatherMap API** + **Linear Regression** to predict revenue impact.
+
+### ** AI-Powered Customer Segmentation**  
+-  Clusters customers based on **purchase behavior** using **K-Means & DBSCAN**.  
+-  Visualized in React for insights.
+
+### ** AI-Based Demand Forecasting**  
+-  Predicts **future sales demand trends** using **LSTM & XGBoost**.  
+-  Helps optimize **inventory management**.
+
+### ** AI-Powered Anomaly Detection**  
+-  Detects unusual sales spikes & fraudulent transactions using **Isolation Forest & Autoencoders**.  
+-  Highlights anomalies in sales data.
+
+### ** AI-Based Product Recommendations**  
+-  Suggests **personalized products** using **Collaborative Filtering & Deep Learning**.  
+-  **Recommender System** powered by **SVD & Neural Networks**.
+
+### ** Market Basket Analysis**  
+-  Identifies frequently purchased **product combinations** using **Apriori Algorithm**.  
+-  Helps with **cross-selling strategies**.
 
 ---
 
-## **Installation & Setup**
+##  **Tech Stack**
+### **Backend (FastAPI + PostgreSQL + AI Models)**
+- **FastAPI** (for API endpoints)
+- **PostgreSQL** (for storing sales data)
+- **Pandas, NumPy** (for data processing)
+- **Prophet, LSTM** (for revenue forecasting)
+- **DistilBERT** (for sentiment analysis)
+- **K-Means, DBSCAN** (for customer segmentation)
+- **OpenWeatherMap API** (for weather impact analysis)
+- **Isolation Forest, Autoencoders** (for anomaly detection)
+- **Scikit-Learn, XGBoost** (for demand forecasting)
+- **Apriori Algorithm** (for market basket analysis)
 
-### **Prerequisites:**
-- **Python 3.10+**
-- **Node.js 16+** and **npm**
-- **PostgreSQL** database
-- **Git**
+### **Frontend (React + Chart.js + Axios)**
+- **React** (for UI components)
+- **Axios** (for API calls)
+- **Chart.js + react-chartjs-2** (for data visualization)
 
-### **1. Clone the Repository:**
-```bash
-git clone https://github.com/Ed-chae/W25_4495_S2_SeungyeolC.git
-cd W25_4495_S2_SeungyeolC
+---
+
+##  **Project Structure**
+```
+Intelligent_Business_Analytics_System/
+│── backend/               # FastAPI Backend
+│   ├── api.py             # Main API routes
+│   ├── db.py              # Database connection
+│   ├── ...
+│── frontend/               # React Frontend
+│   ├── src/
+│   │   ├── components/
+│   │   ├── services/
+│   │   ├── App.js
+│   │   ├── index.js
+│   │   ├── styles.css
+│── tests/               # Unit Tests
+│── DocumentsAndReports/  # Documentation
+│── README.md             # Project Documentation
 ```
 
-### **2. Backend Setup (FastAPI):**
+---
+
+##  **Installation & Setup**
+### ** Clone the Repository**
+```bash
+git clone https://github.com/YOUR_GITHUB_USERNAME/Intelligent_Business_Analytics_System.git
+cd Intelligent_Business_Analytics_System
+```
+
+### ** Set Up the Backend**
 ```bash
 cd backend
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+python -m venv venv
+source venv/bin/activate  # Mac/Linux
+venv\Scripts\activate  # Windows
 pip install -r requirements.txt
+uvicorn api:app --reload
 ```
+API runs at: **http://127.0.0.1:8000**
 
-#### **Environment Variables:**
-Create a `.env` file with the following content:
-```plaintext
-DATABASE_URL=postgresql://postgres:4495@localhost/business_analytics
-```
-Replace `<username>` and `<password>` with your PostgreSQL credentials.
-
-#### **Run the Backend Server:**
+### ** Set Up the Frontend**
 ```bash
-uvicorn main:app --reload
-```
-API Documentation: **http://localhost:8000/docs**
-
----
-
-### **3. Frontend Setup (React.js):**
-```bash
-cd ../frontend
+cd frontend
 npm install
 npm start
 ```
-Frontend will be available at: **http://localhost:3000**
+Frontend runs at: **http://localhost:3000**
 
 ---
 
-### **4. Testing the Application:**
-1. **Upload Sample Data:** Use the **/upload/** endpoint at **http://localhost:8000/docs**.
-2. **View the Dashboard:** Open **http://localhost:3000**.
-
----
-## **File Structure**
-```
-IntelligentBusinessAnalytics/
-│── backend/
-│   ├── main.py            # FastAPI application with analytics endpoints
-│   ├── db.py              # Database configuration and connection
-│   ├── upload.py          # File processing and data storage
-│   ├── analytics.py       # Data analysis and forecasting logic
-│── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── Dashboard.js   # Displays analytics data and visualizations
-│   │   │   ├── FileUpload.js  # Handles file uploads
-│   │   ├── services/
-│   │   │   ├── api.js         # API calls to backend
-│   ├── public/
-│   ├── package.json
-│── README.md
-```
-
-## **API Endpoints**
-| Method | Endpoint       | Description |
-|--------|---------------|-------------|
-| `POST` | `/upload/`    | Uploads an Excel file and stores sales data. |
-| `GET`  | `/analytics/` | Retrieves revenue trends, sentiment analysis, and predictions. |
+##  **Contributors**
+- **Seungyeol Chae** - [GitHub](https://github.com/Ed-chae)
 
 ---
 
-## **API Endpoints**
-| Method | Endpoint       | Description |
-|--------|----------------|-------------|
-| `POST` | `/upload/`     | Upload Excel file and process data |
-| `GET`  | `/insights/`   | Retrieve advanced analytics insights |
+##  **Final Thoughts**
+This **AI-powered Business Analytics System** helps businesses **understand sales trends, predict revenue, optimize inventory, and personalize customer experiences**. 🚀  
 
----
-
-## **Contributors**
-- **Seungyeol Chae** - Developer
+>  **Have questions? Contact us at seungyeol@example.com**  
+>  **Explore More at [GitHub](https://github.com/YOUR_GITHUB_USERNAME/Intelligent_Business_Analytics_System)**
