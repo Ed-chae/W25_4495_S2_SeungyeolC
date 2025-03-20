@@ -66,21 +66,7 @@ The **Intelligent Business Analytics System** is a powerful AI-driven platform d
 
 ##  **Project Structure**
 ```
-Intelligent_Business_Analytics_System/
-│── backend/               # FastAPI Backend
-│   ├── api.py             # Main API routes
-│   ├── db.py              # Database connection
-│   ├── ...
-│── frontend/               # React Frontend
-│   ├── src/
-│   │   ├── components/
-│   │   ├── services/
-│   │   ├── App.js
-│   │   ├── index.js
-│   │   ├── styles.css
-│── tests/               # Unit Tests
-│── DocumentsAndReports/  # Documentation
-│── README.md             # Project Documentation
+Intelligent_Business_Analytics_System/ │── backend/ # FastAPI Backend │ ├── api.py # Main API routes │ ├── db.py # Database connection │ ├── file_processing.py # Handles file uploads & data processing │ ├── sentiment_analysis.py # AI-powered sentiment analysis │ ├── revenue_forecasting.py # AI-based revenue forecasting │ ├── weather_analysis.py # Weather impact on revenue │ ├── customer_segmentation.py # AI-powered customer segmentation │ ├── anomaly_detection.py # Detects sales anomalies │ ├── product_recommendation.py # AI-based product recommendations │ ├── demand_forecasting.py # Predicts demand using AI │ ├── market_basket_analysis.py # Market Basket Analysis │ ├── upload.py # File upload API │ ├── config.py # Configuration settings │ ├── requirements.txt # Python dependencies │── frontend/ # React Frontend │ ├── src/ │ │ ├── components/ │ │ │ ├── FileUpload.js # Upload Excel files │ │ │ ├── SentimentChart.js # Sentiment Analysis Visualization │ │ │ ├── RevenueChart.js # Revenue Forecasting Chart │ │ │ ├── WeatherImpact.js # Weather impact on sales │ │ │ ├── CustomerSegments.js # Customer segmentation visualization │ │ │ ├── DemandForecast.js # Demand forecasting visualization │ │ │ ├── SalesAnomalies.js # Anomaly detection visualization │ │ │ ├── Recommendations.js # Product recommendations visualization │ │ │ ├── MarketBasket.js # Market Basket Analysis visualization │ │ ├── services/ │ │ │ ├── api.js # Axios API service │ │ ├── App.js # Main React App │ │ ├── index.js # React Index file │ │ ├── styles.css # CSS Styles │── tests/ # Unit Tests │ ├── test_file_processing.py │ ├── test_revenue_forecasting.py │ ├── test_sentiment_analysis.py │── DocumentsAndReports/ # Documentation │── README.md # Project Documentation
 ```
 
 ---
