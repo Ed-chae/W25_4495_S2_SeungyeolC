@@ -119,7 +119,6 @@ Frontend runs at: **http://localhost:3000**
 ---
 
 ##  **Final Thoughts**
-This **AI-powered Business Analytics System** helps businesses **understand sales trends, predict revenue, optimize inventory, and personalize customer experiences**. 🚀  
+This **AI-powered Business Analytics System** helps businesses **understand sales trends, predict revenue, optimize inventory, and personalize customer experiences**. 
 
->  **Have questions? Contact us at seungyeol@example.com**  
->  **Explore More at [GitHub](https://github.com/YOUR_GITHUB_USERNAME/Intelligent_Business_Analytics_System)**
+>  ** Contact me at chaes@student.douglascollege.ca**  
