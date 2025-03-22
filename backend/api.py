@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, UploadFile, HTTPException
+from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, Response
 from sqlalchemy.orm import Session
 from pathlib import Path
 
@@ -34,6 +34,18 @@ def root():
 
 
 # -----------------------------------
+# 🌐 CORS Preflight Handler
+# -----------------------------------
+@router.options("/{rest_of_path:path}", include_in_schema=False)
+async def preflight_handler(rest_of_path: str, response: Response):
+    response.headers["Access-Control-Allow-Origin"] = "http://localhost:3000"
+    response.headers["Access-Control-Allow-Methods"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    return Response(status_code=200)
+
+
+# -----------------------------------
 # 📂 File Upload API
 # -----------------------------------
 @router.post("/upload/")
@@ -53,7 +65,13 @@ async def upload_file(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")
 
-
+@router.delete("/reset-sales-data/")
+def reset_sales_data():
+    db = SessionLocal()
+    db.query(SalesData).delete()
+    db.commit()
+    db.close()
+    return {"message": "All sales data deleted."}
 # -----------------------------------
 # 📊 Sentiment Analysis API
 # -----------------------------------

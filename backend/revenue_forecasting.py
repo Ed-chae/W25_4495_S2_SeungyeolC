@@ -7,7 +7,9 @@ from prophet import Prophet
 from db import SessionLocal, SalesData
 from datetime import datetime, timedelta
 
-# Define LSTM Model
+# -----------------------------
+# 📦 LSTM Model Definition
+# -----------------------------
 class LSTMModel(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super(LSTMModel, self).__init__()
@@ -19,25 +21,29 @@ class LSTMModel(nn.Module):
         out = self.fc(out[:, -1, :])
         return out
 
+# -----------------------------
+# 🧠 Train LSTM Model
+# -----------------------------
 def train_lstm(data):
-    """Trains an LSTM model for revenue forecasting."""
-    # Prepare Data
     data = data[["ds", "y"]].dropna()
     data["ds"] = pd.to_datetime(data["ds"])
     data = data.set_index("ds").resample("D").sum().reset_index()
-    
+
     values = data["y"].values
-    values = (values - values.min()) / (values.max() - values.min())  # Normalize
+    if len(values) <= 10:
+        raise ValueError("Not enough data to train LSTM.")
+
+    # Normalize
+    values = (values - values.min()) / (values.max() - values.min())
 
     x_train, y_train = [], []
     for i in range(len(values) - 10):
         x_train.append(values[i : i + 10])
         y_train.append(values[i + 10])
-    
+
     x_train = torch.tensor(x_train, dtype=torch.float32).unsqueeze(-1)
     y_train = torch.tensor(y_train, dtype=torch.float32).unsqueeze(-1)
 
-    # Train Model
     model = LSTMModel(input_size=1, hidden_size=50, output_size=1)
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=0.01)
@@ -51,42 +57,55 @@ def train_lstm(data):
 
     return model, values
 
+# -----------------------------
+# 🔮 Predict with LSTM
+# -----------------------------
 def predict_lstm(model, values):
-    """Generates LSTM revenue predictions."""
     inputs = torch.tensor(values[-10:], dtype=torch.float32).unsqueeze(0).unsqueeze(-1)
     outputs = []
-    
-    for _ in range(30):  # Predict next 30 days
+    for _ in range(30):
         pred = model(inputs).item()
         outputs.append(pred)
         inputs = torch.cat([inputs[:, 1:, :], torch.tensor([[[pred]]])], dim=1)
-
     return outputs
 
+# -----------------------------
+# 📈 Main Forecast Function
+# -----------------------------
 def forecast_revenue():
-    """Runs Prophet and LSTM to predict future revenue."""
     session = SessionLocal()
-    sales_data = session.query(SalesData).all()
+    sales_data = session.query(SalesData).filter(SalesData.date != None, SalesData.revenue != None).all()
     session.close()
 
-    df = pd.DataFrame([{"ds": s.date, "y": s.revenue} for s in sales_data])
-    
-    # Prophet Forecasting
-    prophet_model = Prophet()
-    if "ds" not in df.columns or "y" not in df.columns:
-        print("Warning: Prophet DataFrame is missing required columns. Available columns:", df.columns)
-    df.rename(columns={df.columns[0]: "ds", df.columns[1]: "y"}, inplace=True)
-    df["ds"] = pd.to_datetime(df["ds"])
+    if not sales_data:
+        raise ValueError("No sales data found. Please upload data first.")
 
+    df = pd.DataFrame([{"ds": s.date, "y": s.revenue} for s in sales_data])
+
+    if df.empty or "ds" not in df.columns or "y" not in df.columns:
+        raise ValueError("Missing or empty required columns in DataFrame")
+
+    df["ds"] = pd.to_datetime(df["ds"])
+    df = df.sort_values("ds")  # Optional, helps Prophet
+
+    # Prophet Forecast
+    prophet_model = Prophet()
+    prophet_model.fit(df)
     future = prophet_model.make_future_dataframe(periods=30)
     forecast = prophet_model.predict(future)
+    prophet_output = forecast[["ds", "yhat"]].tail(30).to_dict(orient="records")
 
-    # Train LSTM
-    lstm_model, values = train_lstm(df)
-    lstm_forecast = predict_lstm(lstm_model, values)
+    # LSTM Forecast
+    lstm_model, values = train_lstm(df.copy())
+    lstm_output = predict_lstm(lstm_model, values)
+    today = datetime.today()
 
-    # Convert results to JSON
+    lstm_forecast = [
+        {"ds": (today + timedelta(days=i)).strftime("%Y-%m-%d"), "yhat": float(lstm_output[i])}
+        for i in range(30)
+    ]
+
     return {
-        "prophet_forecast": forecast[["ds", "yhat"]].tail(30).to_dict(orient="records"),
-        "lstm_forecast": [{"ds": (datetime.today() + timedelta(days=i)).strftime("%Y-%m-%d"), "yhat": lstm_forecast[i]} for i in range(30)]
+        "prophet_forecast": prophet_output,
+        "lstm_forecast": lstm_forecast
     }
