@@ -21,7 +21,11 @@ def fetch_customer_data():
 def apply_kmeans_clustering(df, n_clusters=3):
     """Applies K-Means clustering on customer data."""
     kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-    df["cluster"] = kmeans.fit_predict(df[["revenue", "purchase_count"]])
+    required_columns = ["revenue", "purchase_count"]
+    for col in required_columns:
+        if col not in df.columns:
+            print(f"Column {col} not found in DataFrame. Available columns: {df.columns}")
+
     return df
 
 def apply_dbscan_clustering(df):

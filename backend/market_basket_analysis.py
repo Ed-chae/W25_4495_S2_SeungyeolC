@@ -14,7 +14,7 @@ def fetch_transaction_data():
 
 def prepare_market_basket_data(df):
     """Transforms data into basket format for association rule mining."""
-    basket = df.pivot_table(index="transaction_id", columns="product", aggfunc=lambda x: 1, fill_value=0)
+    basket = df.pivot_table(index=df.columns[0], columns="product", aggfunc=lambda x: 1, fill_value=0)
     return basket
 
 def apply_apriori(df, min_support=0.02):
@@ -30,7 +30,7 @@ def generate_association_rules(frequent_itemsets, min_threshold=0.5):
 def market_basket_analysis():
     """Runs Market Basket Analysis and returns frequent itemsets & rules."""
     df = fetch_transaction_data()
-    basket_df = prepare_market_basket_data(df)
+    print("Columns in DataFrame:", df.columns)
     
     # Apply Apriori Algorithm
     frequent_itemsets = apply_apriori(basket_df)

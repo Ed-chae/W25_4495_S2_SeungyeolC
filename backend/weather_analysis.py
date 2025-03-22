@@ -48,7 +48,9 @@ def correlate_weather_sales():
         "weather": fetch_historical_weather("Vancouver", s.date)
     } for s in sales_data])
 
-    df["temperature"] = df["weather"].apply(lambda x: x["temperature"])
+    if "weather" not in df.columns:
+        print("Warning: 'weather' column is missing. Available columns:", df.columns)
+    df["weather"] = "Unknown"
     df["humidity"] = df["weather"].apply(lambda x: x["humidity"])
     df["weather_condition"] = df["weather"].apply(lambda x: x["weather"])
 

@@ -73,7 +73,11 @@ def forecast_revenue():
     
     # Prophet Forecasting
     prophet_model = Prophet()
-    prophet_model.fit(df)
+    if "ds" not in df.columns or "y" not in df.columns:
+        print("Warning: Prophet DataFrame is missing required columns. Available columns:", df.columns)
+    df.rename(columns={df.columns[0]: "ds", df.columns[1]: "y"}, inplace=True)
+    df["ds"] = pd.to_datetime(df["ds"])
+
     future = prophet_model.make_future_dataframe(periods=30)
     forecast = prophet_model.predict(future)
 

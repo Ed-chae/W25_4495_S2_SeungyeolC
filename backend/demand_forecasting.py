@@ -26,6 +26,8 @@ def fetch_sales_data():
     session.close()
 
     df = pd.DataFrame([{"ds": s.date, "y": s.revenue} for s in sales_data])
+    if "ds" not in df.columns:
+        df.rename(columns={df.columns[0]: "ds"}, inplace=True)
     df["ds"] = pd.to_datetime(df["ds"])
     return df
 
