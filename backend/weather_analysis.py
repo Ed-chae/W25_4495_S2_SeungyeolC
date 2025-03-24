@@ -10,21 +10,19 @@ import numpy as np
 
 # Load environment variables
 load_dotenv()
-API_KEY = os.getenv("WEATHER_API_KEY")
+
+API_KEY = os.getenv("OPENWEATHER_API_KEY")
 BASE_URL = "http://api.openweathermap.org/data/2.5/weather"
 
 def fetch_weather(city):
-    """Fetches real-time weather data for the given city."""
-    url = f"{BASE_URL}?q={city}&appid={API_KEY}&units=metric"
-    response = requests.get(url).json()
-
-    if response.get("cod") != 200:
-        return None
-
+    """Fetches current weather data for a given city."""
+    params = {"q": city, "appid": API_KEY, "units": "metric"}
+    response = requests.get(BASE_URL, params=params)
+    data = response.json()
     return {
-        "temperature": response["main"]["temp"],
-        "humidity": response["main"]["humidity"],
-        "weather": response["weather"][0]["description"]
+        "temperature": data["main"]["temp"],
+        "humidity": data["main"]["humidity"],
+        "weather_code": data["weather"][0]["id"]
     }
 
 def fetch_historical_weather(city, date):
