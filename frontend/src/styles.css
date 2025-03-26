@@ -1,0 +1,26 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #f4f4f4;
+}
+
+h1 {
+    color: #333;
+    margin-top: 20px;
+}
+
+button {
+    padding: 10px;
+    background: #007BFF;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.upload-container {
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    background: white;
+    width: 50%;
+}
