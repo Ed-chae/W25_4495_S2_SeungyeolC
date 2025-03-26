@@ -95,18 +95,57 @@ def predict_xgboost(model):
     return [{"ds": future_dates[i].strftime("%Y-%m-%d"), "yhat": predictions[i]} for i in range(30)]
 
 def forecast_demand():
-    """Runs both LSTM and XGBoost models to predict demand."""
-    df = fetch_sales_data()
+    """Forecasts item-level demand for the next 7 days using historical revenue data."""
 
-    # Train LSTM
-    lstm_model, values = train_lstm_model(df)
-    lstm_forecast = predict_lstm(lstm_model, values)
+    session = SessionLocal()
+    sales_data = session.query(SalesData).all()
+    session.close()
 
-    # Train XGBoost
-    xgb_model = train_xgboost_model(df)
-    xgb_forecast = predict_xgboost(xgb_model)
+    df = pd.DataFrame([{"date": s.date, "product": s.product, "revenue": s.revenue} for s in sales_data])
+    df["date"] = pd.to_datetime(df["date"])
 
-    return {
-        "lstm_forecast": [{"ds": (datetime.today() + timedelta(days=i)).strftime("%Y-%m-%d"), "yhat": lstm_forecast[i]} for i in range(30)],
-        "xgboost_forecast": xgb_forecast
-    }
+    forecast_summary = []
+
+    for product_name, group in df.groupby("product"):
+        daily_sales = group.set_index("date").resample("D").sum().fillna(0)
+        y = daily_sales["revenue"].values
+
+        # If not enough data, skip this product
+        if len(y) < 10:
+            continue
+
+        # Prepare LSTM-style inputs
+        x_train, y_train = [], []
+        for i in range(len(y) - 10):
+            x_train.append(y[i:i+10])
+            y_train.append(y[i+10])
+
+        x_train = torch.tensor(x_train, dtype=torch.float32).unsqueeze(-1)
+        y_train = torch.tensor(y_train, dtype=torch.float32).unsqueeze(-1)
+
+        # Train simple LSTM
+        model = LSTMModel(1, 32, 1)
+        criterion = nn.MSELoss()
+        optimizer = optim.Adam(model.parameters(), lr=0.01)
+        for _ in range(50):
+            optimizer.zero_grad()
+            output = model(x_train)
+            loss = criterion(output, y_train)
+            loss.backward()
+            optimizer.step()
+
+        # Forecast next 7 days
+        recent = torch.tensor(y[-10:], dtype=torch.float32).unsqueeze(0).unsqueeze(-1)
+        predictions = []
+        for _ in range(7):
+            next_val = model(recent).item()
+            predictions.append(max(0, round(next_val)))
+            recent = torch.cat([recent[:, 1:, :], torch.tensor([[[next_val]]])], dim=1)
+
+        total_next_week = int(sum(predictions))
+        forecast_summary.append({
+            "product": product_name,
+            "forecast_next_7_days": total_next_week
+        })
+
+    return forecast_summary

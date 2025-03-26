@@ -1,12 +1,12 @@
 from transformers import pipeline
+import os
 
-# Load Sentiment Analysis Model (DistilBERT)
+# Load once globally
 sentiment_pipeline = pipeline("sentiment-analysis")
 
 def analyze_sentiment(text):
-    """Returns sentiment label ('POSITIVE' or 'NEGATIVE') and confidence score."""
-    if not text or text.strip() == "":
-        return {"label": "NEUTRAL", "score": 0.0}
-
-    result = sentiment_pipeline(text)[0]
-    return {"label": result["label"], "score": result["score"]}
+    result = sentiment_pipeline(text[:512])[0]  # Truncate to 512 tokens
+    return {
+        "label": result["label"],  # "POSITIVE" or "NEGATIVE"
+        "score": float(result["score"])  # Optional: confidence score
+    }

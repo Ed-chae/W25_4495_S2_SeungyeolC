@@ -77,9 +77,17 @@ def reset_sales_data():
 # -----------------------------------
 @router.get("/sentiment-results/")
 def get_sentiment_results(db: Session = Depends(get_db)):
-    """Fetch sentiment analysis results."""
+    """Fetch sentiment analysis results + summary."""
     results = db.query(SalesData).all()
-    return [{"product": r.product, "review": r.review, "sentiment": analyze_sentiment(r.review)["label"]} for r in results]
+
+    return [
+        {
+            "product": r.product,
+            "review": r.review,
+            "sentiment": analyze_sentiment(r.review)["label"]
+        }
+        for r in results
+    ]
 
 
 # -----------------------------------
@@ -114,7 +122,6 @@ def get_customer_segments():
 # -----------------------------------
 @router.get("/demand-forecast/")
 def get_demand_forecast():
-    """Fetches AI-powered demand predictions (LSTM & XGBoost)."""
     return forecast_demand()
 
 
