@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from prophet import Prophet
-from db import SessionLocal, SalesData
+from db import SessionLocal, RestaurantOrder
 from datetime import datetime, timedelta
 
 # -----------------------------
@@ -33,12 +33,11 @@ def train_lstm(data):
     if len(values) <= 10:
         raise ValueError("Not enough data to train LSTM.")
 
-    # Normalize
     values = (values - values.min()) / (values.max() - values.min())
 
     x_train, y_train = [], []
     for i in range(len(values) - 10):
-        x_train.append(values[i : i + 10])
+        x_train.append(values[i:i + 10])
         y_train.append(values[i + 10])
 
     x_train = torch.tensor(x_train, dtype=torch.float32).unsqueeze(-1)
@@ -70,23 +69,26 @@ def predict_lstm(model, values):
     return outputs
 
 # -----------------------------
-# 📈 Main Forecast Function
+# 📈 Forecast Restaurant Revenue
 # -----------------------------
 def forecast_revenue():
     session = SessionLocal()
-    sales_data = session.query(SalesData).filter(SalesData.date != None, SalesData.revenue != None).all()
+    orders = session.query(RestaurantOrder).filter(RestaurantOrder.date != None).all()
     session.close()
 
-    if not sales_data:
-        raise ValueError("No sales data found. Please upload data first.")
+    if not orders:
+        raise ValueError("No restaurant order data found. Please upload data first.")
 
-    df = pd.DataFrame([{"ds": s.date, "y": s.revenue} for s in sales_data])
+    df = pd.DataFrame([{
+        "ds": o.date,
+        "y": o.quantity * o.price
+    } for o in orders])
 
     if df.empty or "ds" not in df.columns or "y" not in df.columns:
         raise ValueError("Missing or empty required columns in DataFrame")
 
     df["ds"] = pd.to_datetime(df["ds"])
-    df = df.sort_values("ds")  # Optional, helps Prophet
+    df = df.sort_values("ds")
 
     # Prophet Forecast
     prophet_model = Prophet()

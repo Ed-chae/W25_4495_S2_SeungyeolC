@@ -4,9 +4,11 @@ from sklearn.ensemble import IsolationForest
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from db import SessionLocal, SalesData
+from db import SessionLocal, RestaurantOrder
 
-# Define Autoencoder Model
+# -----------------------------
+# 🧠 Autoencoder Model
+# -----------------------------
 class Autoencoder(nn.Module):
     def __init__(self, input_size):
         super(Autoencoder, self).__init__()
@@ -27,26 +29,39 @@ class Autoencoder(nn.Module):
         decoded = self.decoder(encoded)
         return decoded
 
-def fetch_sales_data():
-    """Fetch sales data from the database."""
+# -----------------------------
+# 📥 Fetch Data from DB
+# -----------------------------
+def fetch_order_data():
     session = SessionLocal()
-    sales_data = session.query(SalesData).all()
+    data = session.query(RestaurantOrder).filter(RestaurantOrder.date != None).all()
     session.close()
 
-    df = pd.DataFrame([{"date": s.date, "revenue": s.revenue} for s in sales_data])
+    df = pd.DataFrame([{
+        "date": o.date,
+        "menu_item": o.menu_item,
+        "quantity": o.quantity
+    } for o in data])
+
     df["date"] = pd.to_datetime(df["date"])
     return df
 
+
+# -----------------------------
+# 🌲 Isolation Forest
+# -----------------------------
 def detect_anomalies_isolation_forest(df):
-    """Uses Isolation Forest to detect anomalies in sales data."""
     model = IsolationForest(contamination=0.05, random_state=42)
-    df["anomaly_score"] = model.fit_predict(df[["revenue"]])
+    df["anomaly_score"] = model.fit_predict(df[["quantity"]])
     df["is_anomaly"] = df["anomaly_score"].apply(lambda x: "Anomaly" if x == -1 else "Normal")
     return df
 
+
+# -----------------------------
+# 🤖 Autoencoder Detection
+# -----------------------------
 def train_autoencoder(df):
-    """Trains an Autoencoder for anomaly detection."""
-    values = df["revenue"].values
+    values = df["quantity"].values
     values = (values - values.min()) / (values.max() - values.min())  # Normalize
     values = torch.tensor(values, dtype=torch.float32).unsqueeze(-1)
 
@@ -54,7 +69,7 @@ def train_autoencoder(df):
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=0.01)
 
-    for epoch in range(200):
+    for _ in range(200):
         optimizer.zero_grad()
         output = model(values)
         loss = criterion(output, values)
@@ -63,9 +78,9 @@ def train_autoencoder(df):
 
     return model
 
+
 def detect_anomalies_autoencoder(df, model):
-    """Uses trained Autoencoder to detect anomalies."""
-    values = df["revenue"].values
+    values = df["quantity"].values
     values = (values - values.min()) / (values.max() - values.min())  # Normalize
     values = torch.tensor(values, dtype=torch.float32).unsqueeze(-1)
 
@@ -78,14 +93,17 @@ def detect_anomalies_autoencoder(df, model):
 
     return df
 
+
+# -----------------------------
+# 🚨 Main Anomaly Function
+# -----------------------------
 def detect_sales_anomalies():
-    """Runs both Isolation Forest & Autoencoder models to detect anomalies."""
-    df = fetch_sales_data()
+    df = fetch_order_data()
 
-    # Isolation Forest
+    if df.empty or "quantity" not in df.columns:
+        raise ValueError("No valid quantity data found.")
+
     df = detect_anomalies_isolation_forest(df)
-
-    # Autoencoder
     autoencoder_model = train_autoencoder(df)
     df = detect_anomalies_autoencoder(df, autoencoder_model)
 

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, Respons
 from sqlalchemy.orm import Session
 from pathlib import Path
 
-from db import SessionLocal, SalesData
+from db import SessionLocal, SalesData, RestaurantOrder
 from file_processing import process_sales_data
 from sentiment_analysis import analyze_sentiment
 from revenue_forecasting import forecast_revenue
@@ -16,11 +16,10 @@ from market_basket_analysis import market_basket_analysis
 router = APIRouter()
 
 UPLOAD_DIR = Path("data/uploads")
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)  # Ensure upload folder exists
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def get_db():
-    """Dependency to get a database session."""
     db = SessionLocal()
     try:
         yield db
@@ -50,7 +49,6 @@ async def preflight_handler(rest_of_path: str, response: Response):
 # -----------------------------------
 @router.post("/upload/")
 async def upload_file(file: UploadFile = File(...)):
-    """Handles file upload, processes data, and stores results."""
     if not file.filename.endswith((".xlsx", ".xls")):
         raise HTTPException(status_code=400, detail="Only Excel files are allowed.")
 
@@ -65,6 +63,10 @@ async def upload_file(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")
 
+
+# -----------------------------------
+# 🧼 Reset Database APIs
+# -----------------------------------
 @router.delete("/reset-sales-data/")
 def reset_sales_data():
     db = SessionLocal()
@@ -72,53 +74,96 @@ def reset_sales_data():
     db.commit()
     db.close()
     return {"message": "All sales data deleted."}
+
+
+@router.delete("/reset-restaurant-orders/")
+def reset_restaurant_orders():
+    db = SessionLocal()
+    db.query(RestaurantOrder).delete()
+    db.commit()
+    db.close()
+    return {"message": "All restaurant order data deleted."}
+
+
 # -----------------------------------
 # 📊 Sentiment Analysis API
 # -----------------------------------
 @router.get("/sentiment-results/")
 def get_sentiment_results(db: Session = Depends(get_db)):
-    """Fetch sentiment analysis results + summary."""
-    results = db.query(SalesData).all()
+    """Returns reviews and sentiment for each item (standard + restaurant)."""
+    sales_reviews = db.query(SalesData).all()
+    restaurant_reviews = db.query(RestaurantOrder).all()
 
-    return [
-        {
-            "product": r.product,
+    results = []
+
+    for r in sales_reviews:
+        results.append({
+            "item": r.product,
             "review": r.review,
             "sentiment": analyze_sentiment(r.review)["label"]
+        })
+
+    for r in restaurant_reviews:
+        results.append({
+            "item": r.menu_item,
+            "review": r.review,
+            "sentiment": analyze_sentiment(r.review)["label"]
+        })
+
+    # Optional summary per item
+    summary = {}
+    for entry in results:
+        item = entry["item"]
+        sentiment = entry["sentiment"]
+        if item not in summary:
+            summary[item] = {"positive": 0, "negative": 0}
+        if sentiment == "POSITIVE":
+            summary[item]["positive"] += 1
+        else:
+            summary[item]["negative"] += 1
+
+    summary_table = [
+        {
+            "item": item,
+            "positive": data["positive"],
+            "negative": data["negative"],
+            "summary": f"{item} - {round((data['negative'] / (data['positive'] + data['negative']) * 100) if (data['positive'] + data['negative']) > 0 else 0)}% negative"
         }
-        for r in results
+        for item, data in summary.items()
     ]
+
+    return {
+        "details": results,
+        "summary": summary_table
+    }
 
 
 # -----------------------------------
-# 📈 Revenue Forecasting API
+# 📈 Revenue Forecasting
 # -----------------------------------
 @router.get("/revenue-forecast/")
 def get_revenue_forecast():
-    """Fetches AI-powered revenue predictions (Prophet & LSTM)."""
     return forecast_revenue()
 
 
 # -----------------------------------
-# ⛅ Weather Impact on Sales API
+# ⛅ Weather Impact on Sales
 # -----------------------------------
 @router.get("/weather-impact/")
 def get_weather_impact(city: str = "Vancouver"):
-    """Fetches weather conditions & predicts sales impact."""
     return predict_revenue_impact(city)
 
 
 # -----------------------------------
-# 🛍️ Customer Segmentation API
+# 🛍️ Customer Segmentation
 # -----------------------------------
 @router.get("/customer-segmentation/")
 def get_customer_segments():
-    """Fetches AI-driven customer segments."""
     return segment_customers()
 
 
 # -----------------------------------
-# 📊 Demand Forecasting API
+# 📊 Demand Forecasting
 # -----------------------------------
 @router.get("/demand-forecast/")
 def get_demand_forecast():
@@ -126,27 +171,24 @@ def get_demand_forecast():
 
 
 # -----------------------------------
-# 🚨 Anomaly Detection API
+# 🚨 Anomaly Detection
 # -----------------------------------
 @router.get("/sales-anomalies/")
 def get_sales_anomalies():
-    """Fetches detected anomalies in sales trends."""
     return detect_sales_anomalies()
 
 
 # -----------------------------------
-# 🎯 Product Recommendation API
+# 🎯 Product Recommendation
 # -----------------------------------
 @router.get("/product-recommendations/")
 def get_product_recommendations(user_id: int):
-    """Fetches AI-based product recommendations for a given user."""
     return recommend_products(user_id)
 
 
 # -----------------------------------
-# 🛒 Market Basket Analysis API
+# 🛒 Market Basket Analysis
 # -----------------------------------
 @router.get("/market-basket/")
 def get_market_basket_analysis():
-    """Fetches Market Basket Analysis results (frequent itemsets & association rules)."""
     return market_basket_analysis()

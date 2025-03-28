@@ -1,44 +1,51 @@
 import pandas as pd
-import numpy as np
 from mlxtend.frequent_patterns import apriori, association_rules
-from db import SessionLocal, SalesData
+from db import SessionLocal, RestaurantOrder
 
-def fetch_transaction_data():
-    """Fetch sales transactions from the database."""
+# -------------------------------
+# 📥 Fetch Transactions
+# -------------------------------
+def fetch_transactions():
     session = SessionLocal()
-    sales_data = session.query(SalesData).all()
+    orders = session.query(RestaurantOrder).all()
     session.close()
 
-    df = pd.DataFrame([{"transaction_id": np.random.randint(1, 100), "product": s.product} for s in sales_data])
+    # Each row is an item in a transaction
+    df = pd.DataFrame([
+        {"transaction_id": i + 1, "item": order.menu_item}
+        for i, order in enumerate(orders)
+    ])
     return df
 
-def prepare_market_basket_data(df):
-    """Transforms data into basket format for association rule mining."""
-    basket = df.pivot_table(index=df.columns[0], columns="product", aggfunc=lambda x: 1, fill_value=0)
+# -------------------------------
+# 🧺 Prepare Basket Matrix
+# -------------------------------
+def prepare_basket(df):
+    """Convert transactions into one-hot encoded matrix."""
+    basket = df.groupby(['transaction_id', 'item'])['item'].count().unstack().fillna(0)
+    basket = basket.applymap(lambda x: 1 if x > 0 else 0)
     return basket
 
-def apply_apriori(df, min_support=0.02):
-    """Applies the Apriori algorithm to find frequent itemsets."""
-    frequent_itemsets = apriori(df, min_support=min_support, use_colnames=True)
-    return frequent_itemsets
+# -------------------------------
+# 🧠 Apply Apriori Algorithm
+# -------------------------------
+def apply_apriori(basket_df):
+    """Generate frequent itemsets and association rules."""
+    frequent_itemsets = apriori(basket_df, min_support=0.1, use_colnames=True)
+    if frequent_itemsets.empty:
+        return []
 
-def generate_association_rules(frequent_itemsets, min_threshold=0.5):
-    """Generates association rules from frequent itemsets."""
-    rules = association_rules(frequent_itemsets, metric="lift", min_threshold=min_threshold)
-    return rules[["antecedents", "consequents", "support", "confidence", "lift"]]
+    rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1.0)
+    return rules[['antecedents', 'consequents', 'support', 'confidence', 'lift']].to_dict(orient="records")
 
+# -------------------------------
+# 🎯 Run Market Basket Analysis
+# -------------------------------
 def market_basket_analysis():
-    """Runs Market Basket Analysis and returns frequent itemsets & rules."""
-    df = fetch_transaction_data()
-    print("Columns in DataFrame:", df.columns)
-    
-    # Apply Apriori Algorithm
-    frequent_itemsets = apply_apriori(basket_df)
-    
-    # Generate Association Rules
-    rules = generate_association_rules(frequent_itemsets)
+    df = fetch_transactions()
 
-    return {
-        "frequent_itemsets": frequent_itemsets.to_dict(orient="records"),
-        "association_rules": rules.to_dict(orient="records")
-    }
+    if df.empty or "item" not in df.columns:
+        raise ValueError("❌ No transaction data available.")
+
+    basket_df = prepare_basket(df)
+    return apply_apriori(basket_df)

@@ -1,13 +1,13 @@
 import pandas as pd
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import xgboost as xgb
-from db import SessionLocal, SalesData
-from datetime import datetime, timedelta
+from db import SessionLocal, RestaurantOrder
+from datetime import datetime
 
-# Define LSTM Model
+# -----------------------------
+# 🧠 LSTM Model for Demand Forecast
+# -----------------------------
 class LSTMModel(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super(LSTMModel, self).__init__()
@@ -19,102 +19,36 @@ class LSTMModel(nn.Module):
         out = self.fc(out[:, -1, :])
         return out
 
-def fetch_sales_data():
-    """Fetches historical sales data from the database."""
-    session = SessionLocal()
-    sales_data = session.query(SalesData).all()
-    session.close()
 
-    df = pd.DataFrame([{"ds": s.date, "y": s.revenue} for s in sales_data])
-    if "ds" not in df.columns:
-        df.rename(columns={df.columns[0]: "ds"}, inplace=True)
-    df["ds"] = pd.to_datetime(df["ds"])
-    return df
-
-def train_lstm_model(df):
-    """Trains an LSTM model for demand forecasting."""
-    df = df.set_index("ds").resample("D").sum().reset_index()
-    values = df["y"].values
-    values = (values - values.min()) / (values.max() - values.min())  # Normalize
-
-    x_train, y_train = [], []
-    for i in range(len(values) - 10):
-        x_train.append(values[i : i + 10])
-        y_train.append(values[i + 10])
-
-    x_train = torch.tensor(x_train, dtype=torch.float32).unsqueeze(-1)
-    y_train = torch.tensor(y_train, dtype=torch.float32).unsqueeze(-1)
-
-    # Train Model
-    model = LSTMModel(input_size=1, hidden_size=50, output_size=1)
-    criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.01)
-
-    for epoch in range(100):
-        optimizer.zero_grad()
-        output = model(x_train)
-        loss = criterion(output, y_train)
-        loss.backward()
-        optimizer.step()
-
-    return model, values
-
-def predict_lstm(model, values):
-    """Generates demand predictions using LSTM."""
-    inputs = torch.tensor(values[-10:], dtype=torch.float32).unsqueeze(0).unsqueeze(-1)
-    outputs = []
-    
-    for _ in range(30):  # Predict next 30 days
-        pred = model(inputs).item()
-        outputs.append(pred)
-        inputs = torch.cat([inputs[:, 1:, :], torch.tensor([[[pred]]])], dim=1)
-
-    return outputs
-
-def train_xgboost_model(df):
-    """Trains an XGBoost model for demand forecasting."""
-    df["day_of_week"] = df["ds"].dt.dayofweek
-    df["month"] = df["ds"].dt.month
-
-    X = df[["day_of_week", "month"]]
-    y = df["y"]
-
-    model = xgb.XGBRegressor(objective="reg:squarederror", n_estimators=100)
-    model.fit(X, y)
-
-    return model
-
-def predict_xgboost(model):
-    """Generates demand predictions using XGBoost."""
-    future_dates = pd.date_range(start=datetime.today(), periods=30, freq="D")
-    future_data = pd.DataFrame({"ds": future_dates})
-    future_data["day_of_week"] = future_data["ds"].dt.dayofweek
-    future_data["month"] = future_data["ds"].dt.month
-
-    predictions = model.predict(future_data[["day_of_week", "month"]])
-    return [{"ds": future_dates[i].strftime("%Y-%m-%d"), "yhat": predictions[i]} for i in range(30)]
-
+# -----------------------------
+# 📈 Demand Forecast Function
+# -----------------------------
 def forecast_demand():
-    """Forecasts item-level demand for the next 7 days using historical revenue data."""
+    """Forecasts item-level demand for the next 7 days using historical order quantity data."""
 
     session = SessionLocal()
-    sales_data = session.query(SalesData).all()
+    orders = session.query(RestaurantOrder).filter(RestaurantOrder.date != None).all()
     session.close()
 
-    df = pd.DataFrame([{"date": s.date, "product": s.product, "revenue": s.revenue} for s in sales_data])
+    if not orders:
+        raise ValueError("No restaurant order data found.")
+
+    df = pd.DataFrame([
+        {"date": o.date, "menu_item": o.menu_item, "quantity": o.quantity}
+        for o in orders
+    ])
+
     df["date"] = pd.to_datetime(df["date"])
 
     forecast_summary = []
 
-    for product_name, group in df.groupby("product"):
+    for item, group in df.groupby("menu_item"):
         daily_sales = group.set_index("date").resample("D").sum().fillna(0)
-        y = daily_sales["revenue"].values
+        y = daily_sales["quantity"].values
 
-        # If not enough data, skip this product
         if len(y) < 10:
             continue
 
-        # Prepare LSTM-style inputs
         x_train, y_train = [], []
         for i in range(len(y) - 10):
             x_train.append(y[i:i+10])
@@ -123,10 +57,10 @@ def forecast_demand():
         x_train = torch.tensor(x_train, dtype=torch.float32).unsqueeze(-1)
         y_train = torch.tensor(y_train, dtype=torch.float32).unsqueeze(-1)
 
-        # Train simple LSTM
         model = LSTMModel(1, 32, 1)
         criterion = nn.MSELoss()
         optimizer = optim.Adam(model.parameters(), lr=0.01)
+
         for _ in range(50):
             optimizer.zero_grad()
             output = model(x_train)
@@ -134,7 +68,7 @@ def forecast_demand():
             loss.backward()
             optimizer.step()
 
-        # Forecast next 7 days
+        # Predict next 7 days
         recent = torch.tensor(y[-10:], dtype=torch.float32).unsqueeze(0).unsqueeze(-1)
         predictions = []
         for _ in range(7):
@@ -142,10 +76,9 @@ def forecast_demand():
             predictions.append(max(0, round(next_val)))
             recent = torch.cat([recent[:, 1:, :], torch.tensor([[[next_val]]])], dim=1)
 
-        total_next_week = int(sum(predictions))
         forecast_summary.append({
-            "product": product_name,
-            "forecast_next_7_days": total_next_week
+            "menu_item": item,
+            "forecast_next_7_days": int(sum(predictions))
         })
 
     return forecast_summary
