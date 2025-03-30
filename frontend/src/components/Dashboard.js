@@ -8,6 +8,7 @@ import DemandForecast from "./DemandForecast";
 import SalesAnomalies from "./SalesAnomalies";
 import Recommendations from "./Recommendations";
 import MarketBasket from "./MarketBasket";
+import ResetButton from "./ResetButton";
 
 const Dashboard = () => {
   return (
@@ -18,6 +19,7 @@ const Dashboard = () => {
 
       <div className="bg-white p-4 rounded shadow">
         <FileUpload />
+        <ResetButton />
       </div>
 
       <div className="bg-white p-4 rounded shadow">

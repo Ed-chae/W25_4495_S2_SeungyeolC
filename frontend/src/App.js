@@ -8,6 +8,7 @@ import DemandForecast from "./components/DemandForecast";
 import SalesAnomalies from "./components/SalesAnomalies";
 import Recommendations from "./components/Recommendations";
 import MarketBasket from "./components/MarketBasket";
+import ResetButton from "./components/ResetButton";
 import "./styles.css";
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
         <div>
             <h1>Business Analytics Dashboard</h1>
             <FileUpload />
+            <ResetButton />
             <SentimentChart />
             <RevenueChart />
             <WeatherImpact />
