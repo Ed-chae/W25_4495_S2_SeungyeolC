@@ -6,40 +6,50 @@ const MarketBasket = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    axios.get("/market-basket/")
-      .then((response) => setMarketData(response.data))
+    axios
+      .get("/market-basket/")
+      .then((response) => {
+        const data = response.data;
+
+        if (!data || typeof data !== "object") {
+          setError("❌ Invalid market basket response.");
+        } else {
+          setMarketData(data);
+        }
+      })
       .catch((error) => {
         console.error("Error fetching market basket data:", error);
-        setError("❌ Failed to fetch market basket data.");
+        setError("❌ Failed to fetch market basket analysis.");
       });
   }, []);
 
-  if (error) return <p className="text-red-500">{error}</p>;
-  if (!marketData) return <p className="text-gray-500">📊 Loading Market Basket Analysis...</p>;
-
-  if (marketData.length === 0) {
-    return <p className="text-yellow-600">⚠️ No basket analysis available. Please upload sales data.</p>;
-  }
+  if (error) return <p className="text-red-600">{error}</p>;
+  if (!marketData) return <p>Loading Market Basket Analysis...</p>;
 
   return (
-    <div className="bg-white shadow p-4 mb-6 rounded">
-      <h2 className="text-xl font-bold mb-4">🛒 Market Basket Analysis</h2>
+    <div className="p-4">
+      <h3 className="text-xl font-bold mb-4">🛒 Market Basket Analysis</h3>
 
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold mb-2">📌 Association Rules</h3>
-        <ul className="space-y-2 list-disc ml-6">
-          {marketData.map((rule, index) => (
-            <li key={index}>
-              <span className="font-medium">
-                {Array.from(rule.antecedents).join(", ")} → {Array.from(rule.consequents).join(", ")}
-              </span>
-              <div className="text-sm text-gray-600">
-                Support: {rule.support.toFixed(2)}, Confidence: {rule.confidence.toFixed(2)}, Lift: {rule.lift.toFixed(2)}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
+      <h4 className="font-semibold">Frequent Itemsets</h4>
+      <ul className="mb-4 list-disc ml-6">
+        {marketData.frequent_itemsets?.map((itemset, index) => (
+          <li key={index}>
+            <strong>Items:</strong> {itemset.itemsets.join(", ")} | <strong>Support:</strong> {itemset.support.toFixed(2)}
+          </li>
+        ))}
+      </ul>
+
+      <h4 className="font-semibold">Association Rules</h4>
+      <ul className="list-disc ml-6">
+        {marketData.association_rules?.map((rule, index) => (
+          <li key={index}>
+            <strong>{rule.antecedents.join(", ")} → {rule.consequents.join(", ")}</strong>
+            {" | Support: " + rule.support.toFixed(2)}
+            {" | Confidence: " + rule.confidence.toFixed(2)}
+            {" | Lift: " + rule.lift.toFixed(2)}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };

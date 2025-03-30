@@ -89,35 +89,16 @@ def reset_restaurant_orders():
 # 📊 Sentiment Analysis API
 # -----------------------------------
 @router.get("/sentiment-results/")
-def get_sentiment_results(db: Session = Depends(get_db)):
+def get_sentiment_summary(db: Session = Depends(get_db)):
+    """Returns only summarized sentiment per item (grouped by item)."""
     sales_reviews = db.query(SalesData).all()
     restaurant_reviews = db.query(RestaurantOrder).all()
 
-    if not sales_reviews and not restaurant_reviews:
-        return {"details": [], "summary": [], "message": "No data available. Please upload a file first."}
-
-    results = []
+    summary = {}
 
     for r in sales_reviews:
-        if r.review:
-            results.append({
-                "item": r.product,
-                "review": r.review,
-                "sentiment": analyze_sentiment(r.review)["label"]
-            })
-
-    for r in restaurant_reviews:
-        if r.review:
-            results.append({
-                "item": r.menu_item,
-                "review": r.review,
-                "sentiment": analyze_sentiment(r.review)["label"]
-            })
-
-    summary = {}
-    for entry in results:
-        item = entry["item"]
-        sentiment = entry["sentiment"]
+        item = r.product
+        sentiment = analyze_sentiment(r.review)["label"]
         if item not in summary:
             summary[item] = {"positive": 0, "negative": 0}
         if sentiment == "POSITIVE":
@@ -125,21 +106,28 @@ def get_sentiment_results(db: Session = Depends(get_db)):
         else:
             summary[item]["negative"] += 1
 
-    summary_table = [
-        {
+    for r in restaurant_reviews:
+        item = r.menu_item
+        sentiment = analyze_sentiment(r.review)["label"]
+        if item not in summary:
+            summary[item] = {"positive": 0, "negative": 0}
+        if sentiment == "POSITIVE":
+            summary[item]["positive"] += 1
+        else:
+            summary[item]["negative"] += 1
+
+    result = []
+    for item, stats in summary.items():
+        total = stats["positive"] + stats["negative"]
+        negative_percent = (stats["negative"] / total * 100) if total else 0
+        result.append({
             "item": item,
-            "positive": data["positive"],
-            "negative": data["negative"],
-            "summary": f"{item} - {round((data['negative'] / (data['positive'] + data['negative']) * 100) if (data['positive'] + data['negative']) > 0 else 0)}% negative"
-        }
-        for item, data in summary.items()
-    ]
+            "positive": stats["positive"],
+            "negative": stats["negative"],
+            "summary": f"{round(negative_percent, 1)}% negative"
+        })
 
-    return {
-        "details": results,
-        "summary": summary_table
-    }
-
+    return result
 
 # -----------------------------------
 # 📈 Revenue Forecasting
