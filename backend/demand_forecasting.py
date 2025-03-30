@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from db import SessionLocal, RestaurantOrder
-from datetime import datetime
 
 # -----------------------------
 # 🧠 LSTM Model for Demand Forecast
@@ -48,9 +47,8 @@ def forecast_demand():
         y = daily_sales["quantity"].values
 
         if len(y) < 10:
-            continue  # Skip items with insufficient data
+            continue
 
-        # Prepare LSTM-style sequences
         x_train, y_train = [], []
         for i in range(len(y) - 10):
             x_train.append(y[i:i+10])
@@ -59,8 +57,7 @@ def forecast_demand():
         x_train = torch.tensor(x_train, dtype=torch.float32).unsqueeze(-1)
         y_train = torch.tensor(y_train, dtype=torch.float32).unsqueeze(-1)
 
-        # Train LSTM model
-        model = LSTMModel(input_size=1, hidden_size=32, output_size=1)
+        model = LSTMModel(1, 32, 1)
         criterion = nn.MSELoss()
         optimizer = optim.Adam(model.parameters(), lr=0.01)
 
@@ -71,16 +68,15 @@ def forecast_demand():
             loss.backward()
             optimizer.step()
 
-        # Predict next 7 days
         recent = torch.tensor(y[-10:], dtype=torch.float32).unsqueeze(0).unsqueeze(-1)
         predictions = []
         for _ in range(7):
             next_val = model(recent).item()
-            predictions.append(max(0, round(next_val)))  # Avoid negatives
+            predictions.append(max(0, round(next_val)))
             recent = torch.cat([recent[:, 1:, :], torch.tensor([[[next_val]]])], dim=1)
 
         forecast_summary.append({
-            "menu_item": item,
+            "product": item,
             "forecast_next_7_days": int(sum(predictions))
         })
 
