@@ -19,19 +19,20 @@ class LSTMModel(nn.Module):
         out = self.fc(out[:, -1, :])
         return out
 
-
 # -----------------------------
 # 📈 Demand Forecast Function
 # -----------------------------
 def forecast_demand():
     """Forecasts item-level demand for the next 7 days using historical order quantity data."""
-
     session = SessionLocal()
     orders = session.query(RestaurantOrder).filter(RestaurantOrder.date != None).all()
     session.close()
 
     if not orders:
-        raise ValueError("No restaurant order data found.")
+        return {
+            "forecast": [],
+            "message": "No restaurant order data found. Please upload data first."
+        }
 
     df = pd.DataFrame([
         {"date": o.date, "menu_item": o.menu_item, "quantity": o.quantity}
@@ -47,8 +48,9 @@ def forecast_demand():
         y = daily_sales["quantity"].values
 
         if len(y) < 10:
-            continue
+            continue  # Skip items with insufficient data
 
+        # Prepare LSTM-style sequences
         x_train, y_train = [], []
         for i in range(len(y) - 10):
             x_train.append(y[i:i+10])
@@ -57,7 +59,8 @@ def forecast_demand():
         x_train = torch.tensor(x_train, dtype=torch.float32).unsqueeze(-1)
         y_train = torch.tensor(y_train, dtype=torch.float32).unsqueeze(-1)
 
-        model = LSTMModel(1, 32, 1)
+        # Train LSTM model
+        model = LSTMModel(input_size=1, hidden_size=32, output_size=1)
         criterion = nn.MSELoss()
         optimizer = optim.Adam(model.parameters(), lr=0.01)
 
@@ -73,7 +76,7 @@ def forecast_demand():
         predictions = []
         for _ in range(7):
             next_val = model(recent).item()
-            predictions.append(max(0, round(next_val)))
+            predictions.append(max(0, round(next_val)))  # Avoid negatives
             recent = torch.cat([recent[:, 1:, :], torch.tensor([[[next_val]]])], dim=1)
 
         forecast_summary.append({
@@ -81,4 +84,7 @@ def forecast_demand():
             "forecast_next_7_days": int(sum(predictions))
         })
 
-    return forecast_summary
+    return {
+        "forecast": forecast_summary,
+        "message": "Demand forecast generated successfully."
+    }

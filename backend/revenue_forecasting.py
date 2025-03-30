@@ -77,7 +77,11 @@ def forecast_revenue():
     session.close()
 
     if not orders:
-        raise ValueError("No restaurant order data found. Please upload data first.")
+        return {
+            "prophet_forecast": [],
+            "lstm_forecast": [],
+            "message": "No data available. Please upload a file first."
+        }
 
     df = pd.DataFrame([{
         "ds": o.date,
@@ -85,7 +89,11 @@ def forecast_revenue():
     } for o in orders])
 
     if df.empty or "ds" not in df.columns or "y" not in df.columns:
-        raise ValueError("Missing or empty required columns in DataFrame")
+        return {
+            "prophet_forecast": [],
+            "lstm_forecast": [],
+            "message": "Data format error: missing 'ds' or 'y' columns."
+        }
 
     df["ds"] = pd.to_datetime(df["ds"])
     df = df.sort_values("ds")

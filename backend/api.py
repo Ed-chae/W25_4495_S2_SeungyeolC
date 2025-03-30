@@ -90,27 +90,30 @@ def reset_restaurant_orders():
 # -----------------------------------
 @router.get("/sentiment-results/")
 def get_sentiment_results(db: Session = Depends(get_db)):
-    """Returns reviews and sentiment for each item (standard + restaurant)."""
     sales_reviews = db.query(SalesData).all()
     restaurant_reviews = db.query(RestaurantOrder).all()
+
+    if not sales_reviews and not restaurant_reviews:
+        return {"details": [], "summary": [], "message": "No data available. Please upload a file first."}
 
     results = []
 
     for r in sales_reviews:
-        results.append({
-            "item": r.product,
-            "review": r.review,
-            "sentiment": analyze_sentiment(r.review)["label"]
-        })
+        if r.review:
+            results.append({
+                "item": r.product,
+                "review": r.review,
+                "sentiment": analyze_sentiment(r.review)["label"]
+            })
 
     for r in restaurant_reviews:
-        results.append({
-            "item": r.menu_item,
-            "review": r.review,
-            "sentiment": analyze_sentiment(r.review)["label"]
-        })
+        if r.review:
+            results.append({
+                "item": r.menu_item,
+                "review": r.review,
+                "sentiment": analyze_sentiment(r.review)["label"]
+            })
 
-    # Optional summary per item
     summary = {}
     for entry in results:
         item = entry["item"]
@@ -143,7 +146,10 @@ def get_sentiment_results(db: Session = Depends(get_db)):
 # -----------------------------------
 @router.get("/revenue-forecast/")
 def get_revenue_forecast():
-    return forecast_revenue()
+    try:
+        return forecast_revenue()
+    except Exception as e:
+        return {"prophet_forecast": [], "lstm_forecast": [], "message": str(e)}
 
 
 # -----------------------------------
@@ -151,7 +157,10 @@ def get_revenue_forecast():
 # -----------------------------------
 @router.get("/weather-impact/")
 def get_weather_impact(city: str = "Vancouver"):
-    return predict_revenue_impact(city)
+    try:
+        return predict_revenue_impact(city)
+    except Exception as e:
+        return {"error": str(e)}
 
 
 # -----------------------------------
@@ -159,7 +168,10 @@ def get_weather_impact(city: str = "Vancouver"):
 # -----------------------------------
 @router.get("/customer-segmentation/")
 def get_customer_segments():
-    return segment_customers()
+    try:
+        return segment_customers()
+    except Exception as e:
+        return {"segments": [], "message": str(e)}
 
 
 # -----------------------------------
@@ -167,7 +179,10 @@ def get_customer_segments():
 # -----------------------------------
 @router.get("/demand-forecast/")
 def get_demand_forecast():
-    return forecast_demand()
+    try:
+        return forecast_demand()
+    except Exception as e:
+        return {"forecast": [], "message": str(e)}
 
 
 # -----------------------------------
@@ -175,7 +190,10 @@ def get_demand_forecast():
 # -----------------------------------
 @router.get("/sales-anomalies/")
 def get_sales_anomalies():
-    return detect_sales_anomalies()
+    try:
+        return detect_sales_anomalies()
+    except Exception as e:
+        return {"anomalies": [], "message": str(e)}
 
 
 # -----------------------------------
@@ -183,7 +201,10 @@ def get_sales_anomalies():
 # -----------------------------------
 @router.get("/product-recommendations/")
 def get_product_recommendations(user_id: int):
-    return recommend_products(user_id)
+    try:
+        return recommend_products(user_id)
+    except Exception as e:
+        return {"svd_recommendations": [], "nn_recommendations": [], "message": str(e)}
 
 
 # -----------------------------------
@@ -191,4 +212,7 @@ def get_product_recommendations(user_id: int):
 # -----------------------------------
 @router.get("/market-basket/")
 def get_market_basket_analysis():
-    return market_basket_analysis()
+    try:
+        return market_basket_analysis()
+    except Exception as e:
+        return {"rules": [], "message": str(e)}

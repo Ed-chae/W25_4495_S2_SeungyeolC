@@ -1,73 +1,93 @@
 import pandas as pd
 import numpy as np
 from sklearn.cluster import KMeans, DBSCAN
-from db import SessionLocal, SalesData
-from sqlalchemy.orm import sessionmaker
+from db import SessionLocal, RestaurantOrder
 
+# -----------------------------
+# 📥 Fetch Restaurant Orders
+# -----------------------------
 def fetch_customer_data():
     """
-    Fetch sales data from the database and preprocess for segmentation.
-    Each entry is treated as a unique customer for now (simulation).
+    Fetch restaurant orders and simulate customer behavior using random customer IDs.
     """
     session = SessionLocal()
-    sales_data = session.query(SalesData).all()
+    orders = session.query(RestaurantOrder).filter(RestaurantOrder.price != None, RestaurantOrder.quantity != None).all()
     session.close()
 
-    df = pd.DataFrame([{
-        "customer_id": s.id,
-        "revenue": s.revenue,
-        "purchase_count": np.random.randint(1, 10)  # Simulated purchases
-    } for s in sales_data if s.revenue is not None])
+    if not orders:
+        return pd.DataFrame()
+
+    df = pd.DataFrame([
+        {
+            "customer_id": o.id,  # Simulated individual customer
+            "revenue": o.quantity * o.price,
+            "purchase_count": np.random.randint(1, 10)  # Simulated count
+        }
+        for o in orders
+    ])
 
     return df
 
+# -----------------------------
+# 📊 Clustering Algorithms
+# -----------------------------
 def apply_kmeans_clustering(df, n_clusters=3):
-    """Applies KMeans clustering based on revenue and purchase count."""
+    """Apply KMeans clustering based on revenue and purchase count."""
     kmeans = KMeans(n_clusters=n_clusters, random_state=42)
     df["kmeans_cluster"] = kmeans.fit_predict(df[["revenue", "purchase_count"]])
     return df
 
 def apply_dbscan_clustering(df):
-    """Applies DBSCAN to detect density-based customer patterns."""
+    """Apply DBSCAN for density-based clustering (e.g., outlier detection)."""
     dbscan = DBSCAN(eps=5, min_samples=2)
     df["dbscan_cluster"] = dbscan.fit_predict(df[["revenue", "purchase_count"]])
     return df
 
+# -----------------------------
+# 🧠 Explain Cluster Segments
+# -----------------------------
 def explain_clusters(df):
     """
-    Add a simple interpretation of each cluster to help users understand results.
+    Create human-readable labels for each KMeans cluster.
     """
-    explanations = []
+    summaries = []
     for cluster_id in sorted(df["kmeans_cluster"].unique()):
-        segment_df = df[df["kmeans_cluster"] == cluster_id]
-        avg_revenue = segment_df["revenue"].mean()
-        avg_count = segment_df["purchase_count"].mean()
+        group = df[df["kmeans_cluster"] == cluster_id]
+        avg_rev = group["revenue"].mean()
+        avg_count = group["purchase_count"].mean()
 
-        if avg_revenue > 100 and avg_count > 5:
+        if avg_rev > 100 and avg_count > 5:
             label = "💎 VIP Customers"
-        elif avg_revenue > 50:
+        elif avg_rev > 50:
             label = "📦 Regular Buyers"
         else:
             label = "🛍️ Low-Spend Shoppers"
 
-        explanations.append({
+        summaries.append({
             "cluster_id": int(cluster_id),
             "label": label,
-            "avg_revenue": round(avg_revenue, 2),
+            "avg_revenue": round(avg_rev, 2),
             "avg_purchase_count": round(avg_count, 2),
-            "total_customers": len(segment_df)
+            "total_customers": len(group)
         })
 
-    return explanations
+    return summaries
 
+# -----------------------------
+# 🚀 Main Segmentation Function
+# -----------------------------
 def segment_customers():
     """
-    Main function to segment customers with AI-based clustering and explanations.
+    Endpoint logic for customer segmentation results.
     """
     df = fetch_customer_data()
 
     if df.empty:
-        return {"error": "No customer data available for segmentation."}
+        return {
+            "summary": [],
+            "raw_data": [],
+            "message": "No restaurant customer data available for segmentation."
+        }
 
     df = apply_kmeans_clustering(df)
     df = apply_dbscan_clustering(df)

@@ -8,7 +8,7 @@ from db import SessionLocal, RestaurantOrder
 from collections import defaultdict
 
 # -----------------------------------
-# 🧠 Neural Network Model for Recs
+# 🧠 Neural Network Model
 # -----------------------------------
 class RecommendationNN(nn.Module):
     def __init__(self, num_users, num_items, embedding_size=16):
@@ -24,63 +24,59 @@ class RecommendationNN(nn.Module):
         )
 
     def forward(self, user, item):
-        user_embedded = self.user_embedding(user)
-        item_embedded = self.item_embedding(item)
-        x = torch.cat([user_embedded, item_embedded], dim=1)
+        user_emb = self.user_embedding(user)
+        item_emb = self.item_embedding(item)
+        x = torch.cat([user_emb, item_emb], dim=1)
         return self.fc(x)
 
 # -----------------------------------
-# 📥 Fetch Restaurant Orders
+# 📥 Fetch Restaurant Purchases
 # -----------------------------------
 def fetch_purchase_data():
-    """Fetches customer-item interactions for restaurant data."""
     session = SessionLocal()
-    orders = session.query(RestaurantOrder).all()
+    orders = session.query(RestaurantOrder).filter(RestaurantOrder.menu_item != None).all()
     session.close()
 
     df = pd.DataFrame([
         {
-            "customer_id": np.random.randint(1, 100),  # Simulated customer ID
-            "item": order.menu_item,
-            "rating": np.random.randint(1, 6)  # Simulated feedback
+            "customer_id": np.random.randint(1, 100),  # Simulated user
+            "item": o.menu_item,
+            "rating": np.random.randint(1, 6)  # Simulated rating
         }
-        for order in orders
+        for o in orders
     ])
-
     return df
 
 # -----------------------------------
-# 🔢 Collaborative Filtering (SVD)
+# 🔢 SVD Collaborative Filtering
 # -----------------------------------
 def collaborative_filtering(df):
-    """Uses SVD for collaborative filtering-based recommendations."""
-    user_item_matrix = df.pivot(index="customer_id", columns="item", values="rating").fillna(0)
+    matrix = df.pivot(index="customer_id", columns="item", values="rating").fillna(0)
 
     svd = TruncatedSVD(n_components=5, random_state=42)
-    item_factors = svd.fit_transform(user_item_matrix)
+    item_matrix = svd.fit_transform(matrix)
 
-    recommendations = defaultdict(list)
-    for i, customer_id in enumerate(user_item_matrix.index):
-        top_items = np.argsort(item_factors[i])[-3:]
-        recommendations[customer_id] = [user_item_matrix.columns[j] for j in top_items]
+    recs = defaultdict(list)
+    for i, user_id in enumerate(matrix.index):
+        top_indices = np.argsort(item_matrix[i])[-3:]
+        recs[user_id] = [matrix.columns[j] for j in top_indices]
 
-    return recommendations
+    return recs
 
 # -----------------------------------
-# 🔁 Train Neural Network Recommender
+# 🧠 Train Neural Network
 # -----------------------------------
 def train_neural_network(df):
-    """Trains a neural network for item recommendations."""
-    num_users = df["customer_id"].nunique()
-    num_items = df["item"].nunique()
+    user_ids = df["customer_id"].unique()
+    item_names = df["item"].unique()
 
-    user_to_idx = {u: i for i, u in enumerate(df["customer_id"].unique())}
-    item_to_idx = {i: j for j, i in enumerate(df["item"].unique())}
+    user_to_idx = {u: i for i, u in enumerate(user_ids)}
+    item_to_idx = {i: j for j, i in enumerate(item_names)}
 
     df["user_idx"] = df["customer_id"].map(user_to_idx)
     df["item_idx"] = df["item"].map(item_to_idx)
 
-    model = RecommendationNN(num_users, num_items)
+    model = RecommendationNN(len(user_ids), len(item_names))
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=0.01)
 
@@ -98,16 +94,15 @@ def train_neural_network(df):
     return model, user_to_idx, item_to_idx
 
 # -----------------------------------
-# 🔮 Recommend Menu Items
+# 🔮 Recommend Products
 # -----------------------------------
-def recommend_products(user_id):
-    """Generates menu item recommendations for a simulated restaurant user."""
+def recommend_products(user_id: int):
     df = fetch_purchase_data()
+    if df.empty:
+        return {"error": "No purchase data available for recommendations."}
 
-    # SVD (Collaborative Filtering)
     svd_recs = collaborative_filtering(df)
 
-    # Neural Network Recs
     model, user_to_idx, item_to_idx = train_neural_network(df)
     user_idx = user_to_idx.get(user_id)
 

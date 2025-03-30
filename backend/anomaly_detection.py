@@ -37,6 +37,9 @@ def fetch_order_data():
     data = session.query(RestaurantOrder).filter(RestaurantOrder.date != None).all()
     session.close()
 
+    if not data:
+        return pd.DataFrame()
+
     df = pd.DataFrame([{
         "date": o.date,
         "menu_item": o.menu_item,
@@ -46,7 +49,6 @@ def fetch_order_data():
     df["date"] = pd.to_datetime(df["date"])
     return df
 
-
 # -----------------------------
 # 🌲 Isolation Forest
 # -----------------------------
@@ -55,7 +57,6 @@ def detect_anomalies_isolation_forest(df):
     df["anomaly_score"] = model.fit_predict(df[["quantity"]])
     df["is_anomaly"] = df["anomaly_score"].apply(lambda x: "Anomaly" if x == -1 else "Normal")
     return df
-
 
 # -----------------------------
 # 🤖 Autoencoder Detection
@@ -78,10 +79,9 @@ def train_autoencoder(df):
 
     return model
 
-
 def detect_anomalies_autoencoder(df, model):
     values = df["quantity"].values
-    values = (values - values.min()) / (values.max() - values.min())  # Normalize
+    values = (values - values.min()) / (values.max() - values.min())
     values = torch.tensor(values, dtype=torch.float32).unsqueeze(-1)
 
     reconstructed = model(values).detach().numpy()
@@ -89,10 +89,11 @@ def detect_anomalies_autoencoder(df, model):
 
     df["autoencoder_score"] = errors
     threshold = np.percentile(errors, 95)
-    df["is_anomaly_autoencoder"] = df["autoencoder_score"].apply(lambda x: "Anomaly" if x > threshold else "Normal")
+    df["is_anomaly_autoencoder"] = df["autoencoder_score"].apply(
+        lambda x: "Anomaly" if x > threshold else "Normal"
+    )
 
     return df
-
 
 # -----------------------------
 # 🚨 Main Anomaly Function
@@ -101,10 +102,15 @@ def detect_sales_anomalies():
     df = fetch_order_data()
 
     if df.empty or "quantity" not in df.columns:
-        raise ValueError("No valid quantity data found.")
+        return {
+            "anomalies": [],
+            "message": "No order data available. Please upload restaurant data first."
+        }
 
     df = detect_anomalies_isolation_forest(df)
     autoencoder_model = train_autoencoder(df)
     df = detect_anomalies_autoencoder(df, autoencoder_model)
 
-    return df.to_dict(orient="records")
+    return {
+        "anomalies": df.to_dict(orient="records")
+    }
