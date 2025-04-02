@@ -1,3 +1,5 @@
+# market_basket_analysis.py
+
 import pandas as pd
 from mlxtend.frequent_patterns import apriori, association_rules
 from db import SessionLocal, RestaurantOrder
@@ -7,23 +9,23 @@ from db import SessionLocal, RestaurantOrder
 # -------------------------------
 def fetch_transactions():
     session = SessionLocal()
-    orders = session.query(RestaurantOrder).filter(RestaurantOrder.menu_item != None).all()
+    orders = session.query(RestaurantOrder).filter(RestaurantOrder.order_id != None).all()
     session.close()
 
-    # Each item is treated as a line in a transaction
-    df = pd.DataFrame([
-        {"transaction_id": i + 1, "item": order.menu_item}
-        for i, order in enumerate(orders)
-    ])
+    # Group by order_id to reconstruct transactions
+    transactions = pd.DataFrame([{
+        "order_id": o.order_id,
+        "item": o.menu_item
+    } for o in orders])
 
-    return df
+    return transactions
 
 # -------------------------------
 # 🧺 Prepare Basket Matrix
 # -------------------------------
 def prepare_basket(df):
-    """Converts transaction-item pairs into one-hot encoded basket format."""
-    basket = df.groupby(["transaction_id", "item"])["item"].count().unstack().fillna(0)
+    """Converts transactions into one-hot encoded basket format."""
+    basket = df.groupby(['order_id', 'item'])['item'].count().unstack().fillna(0)
     basket = basket.applymap(lambda x: 1 if x > 0 else 0)
     return basket
 
@@ -49,7 +51,7 @@ def market_basket_analysis():
     if df.empty or "item" not in df.columns:
         return {
             "results": [],
-            "message": "No restaurant transaction data found. Please upload data first."
+            "message": "No transaction data found. Please upload valid order data first."
         }
 
     basket_df = prepare_basket(df)
@@ -57,5 +59,5 @@ def market_basket_analysis():
 
     return {
         "results": results,
-        "message": "Market basket analysis completed successfully." if results else "No strong association rules found."
+        "message": "✅ Market basket analysis completed." if results else "No strong association rules found."
     }

@@ -10,24 +10,28 @@ SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 
 # ---------------------------------------
-# Existing SalesData Table (keep as-is)
+# Updated SalesData Table with Order ID
 # ---------------------------------------
 class SalesData(Base):
     __tablename__ = "sales"
 
     id = Column(Integer, primary_key=True, index=True)
+    order_id = Column(String)
     date = Column(Date)
     product = Column(String)
+    quantity = Column(Integer)
     revenue = Column(Float)
     review = Column(String)
+    weather = Column(String)
 
 # ---------------------------------------
-# NEW: RestaurantOrder Table for restaurant-specific data
+# Updated RestaurantOrder Table with Order ID
 # ---------------------------------------
 class RestaurantOrder(Base):
     __tablename__ = "restaurant_orders"
 
     id = Column(Integer, primary_key=True, index=True)
+    order_id = Column(String)
     date = Column(Date)
     menu_item = Column(String)
     quantity = Column(Integer)
@@ -43,30 +47,34 @@ Base.metadata.create_all(bind=engine)
 # ---------------------------------------
 
 def save_sales_data(df: pd.DataFrame):
-    """Saves processed sales data to PostgreSQL (original structure)."""
+    """Saves processed sales data to PostgreSQL."""
     session = SessionLocal()
     for _, row in df.iterrows():
         entry = SalesData(
-            date=row["Date"],
-            product=row["Product"],
-            revenue=row["Revenue"],
-            review=row["Review"]
+            order_id=row.get("order id", None),
+            date=row["date"],
+            product=row.get("product", ""),
+            quantity=int(row.get("quantity", 1)),
+            revenue=float(row.get("revenue", 0)),
+            review=row.get("review", ""),
+            weather=row.get("weather", "")
         )
         session.add(entry)
     session.commit()
     session.close()
 
 def save_restaurant_orders(df: pd.DataFrame):
-    """Saves processed restaurant orders to PostgreSQL (new structure)."""
+    """Saves processed restaurant orders to PostgreSQL."""
     session = SessionLocal()
     for _, row in df.iterrows():
         order = RestaurantOrder(
-            date=row["Date"],
-            menu_item=row["Menu"],
-            quantity=int(row["Quantity"]),
-            price=float(row["Price"]),
-            review=row["Review"],
-            weather=row.get("Weather", "")  # optional
+            order_id=row.get("order id", None),
+            date=row["date"],
+            menu_item=row["menu"],
+            quantity=int(row["quantity"]),
+            price=float(row["price"]),
+            review=row.get("review", ""),
+            weather=row.get("weather", "")
         )
         session.add(order)
     session.commit()

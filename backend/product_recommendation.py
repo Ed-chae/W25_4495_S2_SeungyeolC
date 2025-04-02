@@ -1,3 +1,4 @@
+# ✅ product_recommendation.py (updated to use order_id as user_id)
 import pandas as pd
 import numpy as np
 import torch
@@ -39,11 +40,11 @@ def fetch_purchase_data():
 
     df = pd.DataFrame([
         {
-            "customer_id": np.random.randint(1, 100),  # Simulated user
+            "customer_id": o.order_id,  # use order_id as proxy for user
             "item": o.menu_item,
-            "rating": np.random.randint(1, 6)  # Simulated rating
+            "rating": np.random.randint(3, 6)  # simulate positive interactions
         }
-        for o in orders
+        for o in orders if o.order_id and o.menu_item
     ])
     return df
 
@@ -52,6 +53,8 @@ def fetch_purchase_data():
 # -----------------------------------
 def collaborative_filtering(df):
     matrix = df.pivot(index="customer_id", columns="item", values="rating").fillna(0)
+    if matrix.shape[0] < 2 or matrix.shape[1] < 2:
+        return {}
 
     svd = TruncatedSVD(n_components=5, random_state=42)
     item_matrix = svd.fit_transform(matrix)
@@ -96,16 +99,15 @@ def train_neural_network(df):
 # -----------------------------------
 # 🔮 Recommend Products
 # -----------------------------------
-def recommend_products(user_id: int):
+def recommend_products(user_id: str):
     df = fetch_purchase_data()
     if df.empty:
         return {"error": "No purchase data available for recommendations."}
 
     svd_recs = collaborative_filtering(df)
-
     model, user_to_idx, item_to_idx = train_neural_network(df)
-    user_idx = user_to_idx.get(user_id)
 
+    user_idx = user_to_idx.get(user_id)
     if user_idx is None:
         return {"error": f"User {user_id} not found."}
 
