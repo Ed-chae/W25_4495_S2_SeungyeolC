@@ -10,8 +10,12 @@ function SentimentChart() {
     api
       .get("/sentiment-results/")
       .then((res) => {
-        if (res.data?.summary) {
-          const processed = res.data.summary.map((item) => {
+        console.log("Sentiment API response:", res.data); // Debug: Check backend structure
+
+        const summary = Array.isArray(res.data) ? res.data : res.data?.summary;
+
+        if (Array.isArray(summary) && summary.length > 0) {
+          const processed = summary.map((item) => {
             const positivity =
               item.negative / (item.positive + item.negative) < 0.5
                 ? "😊 Positive"
@@ -51,7 +55,7 @@ function SentimentChart() {
 
       {!error && summaryData.length === 0 ? (
         <p className="text-gray-500">No sentiment summary available.</p>
-      ) : (
+      ) : summaryData.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="min-w-full border border-gray-300 text-sm bg-white rounded shadow">
             <thead className="bg-gray-100">
@@ -59,7 +63,6 @@ function SentimentChart() {
                 <th className="p-2 border">Item</th>
                 <th className="p-2 border">👍 Positive</th>
                 <th className="p-2 border">👎 Negative</th>
-                <th className="p-2 border">Summary</th>
                 <th className="p-2 border">Sentiment</th>
               </tr>
             </thead>
@@ -68,9 +71,7 @@ function SentimentChart() {
                 <tr key={idx} className="hover:bg-gray-50 text-center">
                   <td className="p-2 border">{row.item}</td>
                   <td className="p-2 border">{row.positive}</td>
-                  <td className="p-2 border">{row.negative}</td>
-                  <td className="p-2 border">{row.summary}</td>
-                  <td
+                  <td className="p-2 border">{row.negative}</td>                  <td
                     className={`p-2 border font-semibold ${
                       row.mood.includes("Positive")
                         ? "text-green-600"
@@ -84,7 +85,7 @@ function SentimentChart() {
             </tbody>
           </table>
         </div>
-      )}
+      ) : null}
     </motion.div>
   );
 }

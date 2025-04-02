@@ -25,12 +25,18 @@ Chart.register(
 
 const RevenueChart = () => {
   const [forecastData, setForecastData] = useState({ labels: [], datasets: [] });
+  const [error, setError] = useState("");
 
   useEffect(() => {
     axios.get("/revenue-forecast/")
       .then(response => {
         const prophetData = response.data.prophet_forecast;
         const lstmData = response.data.lstm_forecast;
+
+        if (!prophetData?.length && !lstmData?.length) {
+          setError("No forecast data available.");
+          return;
+        }
 
         setForecastData({
           labels: prophetData.map(d => d.ds),
@@ -41,18 +47,14 @@ const RevenueChart = () => {
               borderColor: "#3B82F6",
               tension: 0.4,
               fill: false,
-            },
-            {
-              label: "LSTM Forecast",
-              data: lstmData.map(d => d.yhat),
-              borderColor: "#10B981",
-              tension: 0.4,
-              fill: false,
             }
           ]
         });
       })
-      .catch(error => console.error("Error fetching revenue forecast:", error));
+      .catch(error => {
+        console.error("Error fetching revenue forecast:", error);
+        setError("❌ Failed to load revenue forecast.");
+      });
   }, []);
 
   return (
@@ -63,9 +65,14 @@ const RevenueChart = () => {
       transition={{ duration: 0.6 }}
     >
       <h2 className="text-xl font-semibold mb-4 text-blue-700">📊 Revenue Forecast (Next 30 Days)</h2>
-      <div className="bg-white rounded shadow p-4">
-        <Line data={forecastData} />
-      </div>
+
+      {error && <p className="text-red-500">{error}</p>}
+
+      {!error && forecastData.labels.length > 0 && (
+        <div className="bg-white rounded shadow p-4">
+          <Line data={forecastData} />
+        </div>
+      )}
     </motion.div>
   );
 };

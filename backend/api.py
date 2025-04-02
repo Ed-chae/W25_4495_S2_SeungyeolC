@@ -94,7 +94,7 @@ def get_sentiment_summary(db: Session = Depends(get_db)):
     sales_reviews = db.query(SalesData).all()
     restaurant_reviews = db.query(RestaurantOrder).all()
 
-    summary = {}
+    summary = {}  # ✅ Define it here
 
     for r in sales_reviews:
         item = r.product
@@ -127,7 +127,8 @@ def get_sentiment_summary(db: Session = Depends(get_db)):
             "summary": f"{round(negative_percent, 1)}% negative"
         })
 
-    return result
+    return {"summary": result}  # ✅ Fix: this must be wrapped in an object
+
 
 # -----------------------------------
 # 📈 Revenue Forecasting

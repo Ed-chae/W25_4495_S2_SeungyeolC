@@ -1,74 +1,59 @@
 import React, { useEffect, useState } from "react";
 import axios from "../services/api";
 import { Line } from "react-chartjs-2";
-import { motion } from "framer-motion";
 import {
   Chart,
   LineElement,
+  PointElement,
   CategoryScale,
   LinearScale,
-  PointElement,
-  Title,
   Tooltip,
   Legend,
 } from "chart.js";
 
-Chart.register(
-  LineElement,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  Title,
-  Tooltip,
-  Legend
-);
+Chart.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 const WeatherImpact = () => {
-  const [data, setData] = useState(null);
+  const [forecastData, setForecastData] = useState(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    axios
-      .get("/weather-impact/?city=Vancouver")
-      .then((res) => setData(res.data))
-      .catch((err) => console.error("Error fetching weather impact:", err));
+    axios.get("/weather-impact/?city=Vancouver")
+      .then(response => {
+        setForecastData(response.data);
+      })
+      .catch(error => {
+        console.error("Error fetching weather impact:", error);
+        setError("Failed to load weather forecast.");
+      });
   }, []);
 
-  if (!data) return <p className="text-gray-500">Loading weather impact...</p>;
+  if (error) return <div className="text-red-500">{error}</div>;
+  if (!forecastData || !forecastData.forecast) return <p>Loading weather forecast...</p>;
 
-  const labels = data.forecast.map((d) => d.date);
-  const values = data.forecast.map((d) => d.predicted_revenue);
-
-  const chartData = {
-    labels,
+  const data = {
+    labels: forecastData.forecast.map(d => d.date),
     datasets: [
       {
         label: "Predicted Revenue",
-        data: values,
-        fill: false,
-        borderColor: "#F59E0B",
+        data: forecastData.forecast.map(d => d.predicted_revenue),
+        borderColor: "#4F46E5",
         tension: 0.3,
+        fill: false,
       },
     ],
   };
 
   return (
-    <motion.div
-      className="p-4"
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-    >
-      <h2 className="text-xl font-semibold text-yellow-600 mb-2">
-        ⛅ Weather Impact on Revenue (Next 7 Days)
-      </h2>
-      <div className="bg-white rounded shadow p-4">
-        <p className="text-sm text-gray-600 mb-2">
-          <strong>City:</strong> {data.city} | <strong>Today:</strong>{" "}
-          {data.today.weather}, {data.today.temperature}°C
-        </p>
-        <Line data={chartData} />
-      </div>
-    </motion.div>
+    <div className="p-4">
+      <h2 className="text-xl font-semibold mb-2">🌤️ Weather Impact on Revenue (7-Day Forecast)</h2>
+      <p className="text-gray-600 mb-4">
+        City: <strong>{forecastData.city}</strong>, 
+        Weather (today): <strong>{forecastData.forecast[0].weather}</strong>, 
+        Temp: <strong>{forecastData.forecast[0].temperature}°C</strong>
+      </p>
+      <Line data={data} />
+    </div>
   );
 };
 
