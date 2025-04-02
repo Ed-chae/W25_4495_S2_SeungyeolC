@@ -1,5 +1,8 @@
+// src/components/Dashboard.js
 import React from "react";
+import { motion } from "framer-motion";
 import FileUpload from "./FileUpload";
+import ResetButton from "./ResetButton";
 import SentimentChart from "./SentimentChart";
 import RevenueChart from "./RevenueChart";
 import WeatherImpact from "./WeatherImpact";
@@ -8,51 +11,59 @@ import DemandForecast from "./DemandForecast";
 import SalesAnomalies from "./SalesAnomalies";
 import Recommendations from "./Recommendations";
 import MarketBasket from "./MarketBasket";
-import ResetButton from "./ResetButton";
 
 const Dashboard = () => {
-  return (
-    <div className="bg-gray-100 min-h-screen p-6 space-y-8">
-      <h1 className="text-3xl font-bold text-center text-blue-700 mb-4">
-        🍽️ Business Analytics Dashboard
-      </h1>
+  const fadeInUp = {
+    hidden: { opacity: 0, y: 20 },
+    visible: (i = 1) => ({
+      opacity: 1,
+      y: 0,
+      transition: { delay: i * 0.15, duration: 0.6 },
+    }),
+  };
 
-      <div className="bg-white p-4 rounded shadow">
+  return (
+    <div className="bg-gradient-to-br from-slate-100 to-white min-h-screen p-6 space-y-8">
+      <motion.h1
+        className="text-4xl font-bold text-center text-indigo-700 mb-8"
+        initial="hidden"
+        animate="visible"
+        variants={fadeInUp}
+      >
+        🍽️ Intelligent Business Analytics Dashboard
+      </motion.h1>
+
+      <motion.div
+        className="bg-white p-4 rounded-xl shadow-md"
+        initial="hidden"
+        animate="visible"
+        variants={fadeInUp}
+      >
         <FileUpload />
         <ResetButton />
-      </div>
+      </motion.div>
 
-      <div className="bg-white p-4 rounded shadow">
-        <SentimentChart />
-      </div>
-
-      <div className="bg-white p-4 rounded shadow">
-        <RevenueChart />
-      </div>
-
-      <div className="bg-white p-4 rounded shadow">
-        <WeatherImpact />
-      </div>
-
-      <div className="bg-white p-4 rounded shadow">
-        <CustomerSegments />
-      </div>
-
-      <div className="bg-white p-4 rounded shadow">
-        <DemandForecast />
-      </div>
-
-      <div className="bg-white p-4 rounded shadow">
-        <SalesAnomalies />
-      </div>
-
-      <div className="bg-white p-4 rounded shadow">
-        <Recommendations />
-      </div>
-
-      <div className="bg-white p-4 rounded shadow">
-        <MarketBasket />
-      </div>
+      {[
+        <SentimentChart />,
+        <RevenueChart />,
+        <WeatherImpact />,
+        <CustomerSegments />,
+        <DemandForecast />,
+        <SalesAnomalies />,
+        <Recommendations userId={1} />,
+        <MarketBasket />,
+      ].map((Component, index) => (
+        <motion.div
+          key={index}
+          className="bg-white p-4 rounded-xl shadow-md"
+          custom={index + 2}
+          initial="hidden"
+          animate="visible"
+          variants={fadeInUp}
+        >
+          {Component}
+        </motion.div>
+      ))}
     </div>
   );
 };

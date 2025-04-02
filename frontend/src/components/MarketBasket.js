@@ -1,56 +1,54 @@
 import React, { useEffect, useState } from "react";
 import axios from "../services/api";
+import { motion } from "framer-motion";
 
 const MarketBasket = () => {
-  const [marketData, setMarketData] = useState(null);
+  const [data, setData] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     axios
       .get("/market-basket/")
-      .then((response) => {
-        const data = response.data;
-
-        if (!data || typeof data !== "object") {
-          setError("❌ Invalid market basket response.");
-        } else {
-          setMarketData(data);
-        }
+      .then((res) => {
+        setData(res.data);
+        setError("");
       })
-      .catch((error) => {
-        console.error("Error fetching market basket data:", error);
-        setError("❌ Failed to fetch market basket analysis.");
+      .catch((err) => {
+        console.error("Error fetching market basket data:", err);
+        setError("❌ Failed to load market basket analysis.");
       });
   }, []);
 
-  if (error) return <p className="text-red-600">{error}</p>;
-  if (!marketData) return <p>Loading Market Basket Analysis...</p>;
+  if (error) return <p className="text-red-500">{error}</p>;
+  if (!data) return <p className="text-gray-500">Loading market basket analysis...</p>;
 
   return (
-    <div className="p-4">
-      <h3 className="text-xl font-bold mb-4">🛒 Market Basket Analysis</h3>
+    <motion.div
+      className="space-y-6"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <h2 className="text-xl font-semibold text-blue-800">🛒 Market Basket Analysis</h2>
 
-      <h4 className="font-semibold">Frequent Itemsets</h4>
-      <ul className="mb-4 list-disc ml-6">
-        {marketData.frequent_itemsets?.map((itemset, index) => (
-          <li key={index}>
-            <strong>Items:</strong> {itemset.itemsets.join(", ")} | <strong>Support:</strong> {itemset.support.toFixed(2)}
-          </li>
-        ))}
-      </ul>
-
-      <h4 className="font-semibold">Association Rules</h4>
-      <ul className="list-disc ml-6">
-        {marketData.association_rules?.map((rule, index) => (
-          <li key={index}>
-            <strong>{rule.antecedents.join(", ")} → {rule.consequents.join(", ")}</strong>
-            {" | Support: " + rule.support.toFixed(2)}
-            {" | Confidence: " + rule.confidence.toFixed(2)}
-            {" | Lift: " + rule.lift.toFixed(2)}
-          </li>
-        ))}
-      </ul>
-    </div>
+      <div className="bg-white shadow rounded p-4">
+        <h3 className="text-lg font-medium mb-2">🔁 Association Rules</h3>
+        {data.length === 0 ? (
+          <p className="text-gray-500">No association rules found.</p>
+        ) : (
+          <ul className="list-disc ml-5 space-y-1 text-sm">
+            {data.map((rule, index) => (
+              <li key={index}>
+                <b>{Array.from(rule.antecedents).join(", ")}</b> ➡️{" "}
+                <b>{Array.from(rule.consequents).join(", ")}</b> | Support:{" "}
+                {rule.support.toFixed(2)}, Confidence: {rule.confidence.toFixed(2)}, Lift:{" "}
+                {rule.lift.toFixed(2)}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </motion.div>
   );
 };
 

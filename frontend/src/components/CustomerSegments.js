@@ -1,59 +1,61 @@
 import React, { useEffect, useState } from "react";
 import api from "../services/api";
+import { motion } from "framer-motion";
 
 function CustomerSegments() {
-  const [summary, setSummary] = useState([]);
-  const [message, setMessage] = useState("");
+  const [segments, setSegments] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     api
       .get("/customer-segmentation/")
       .then((res) => {
-        if (res.data.message) {
-          setMessage(res.data.message);
-        } else {
-          setSummary(res.data.summary || []);
-        }
+        setSegments(res.data.summary || []);
       })
-      .catch((err) => {
-        console.error("Error fetching customer segments:", err);
-        setMessage("❌ Failed to load segmentation results.");
-      });
+      .catch((err) =>
+        console.error("Error fetching customer segments:", err)
+      )
+      .finally(() => setLoading(false));
   }, []);
 
+  if (loading) return <p className="text-gray-500">Loading customer segments...</p>;
+
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">👥 Customer Segments</h2>
+    <motion.div
+      className="p-4"
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <h2 className="text-xl font-semibold text-blue-600 mb-4">👥 Customer Segments</h2>
+      <p className="text-sm text-gray-600 mb-4">
+        Based on average revenue and purchase count. Each cluster is labeled by customer behavior.
+      </p>
 
-      {message && <p className="text-gray-600">{message}</p>}
-
-      {summary.length > 0 ? (
-        <table className="min-w-full border border-gray-300 text-sm bg-white shadow rounded">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="px-4 py-2 border">Cluster</th>
-              <th className="px-4 py-2 border">Label</th>
-              <th className="px-4 py-2 border">Avg Revenue</th>
-              <th className="px-4 py-2 border">Avg Purchases</th>
-              <th className="px-4 py-2 border"># of Customers</th>
-            </tr>
-          </thead>
-          <tbody>
-            {summary.map((seg, idx) => (
-              <tr key={idx} className="hover:bg-gray-50">
-                <td className="px-4 py-2 border text-center">{seg.cluster_id}</td>
-                <td className="px-4 py-2 border">{seg.label}</td>
-                <td className="px-4 py-2 border">${seg.avg_revenue}</td>
-                <td className="px-4 py-2 border">{seg.avg_purchase_count}</td>
-                <td className="px-4 py-2 border">{seg.total_customers}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        !message && <p className="text-gray-600">No segmentation summary found.</p>
-      )}
-    </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {segments.map((seg, idx) => (
+          <motion.div
+            key={idx}
+            className="bg-white p-4 rounded shadow"
+            whileHover={{ scale: 1.03 }}
+            transition={{ duration: 0.3 }}
+          >
+            <h3 className="text-lg font-semibold mb-2">
+              🧩 Cluster #{seg.cluster_id}: {seg.label}
+            </h3>
+            <p className="text-sm text-gray-700">
+              <strong>📊 Avg Revenue:</strong> ${seg.avg_revenue}
+            </p>
+            <p className="text-sm text-gray-700">
+              <strong>🛒 Avg Purchases:</strong> {seg.avg_purchase_count}
+            </p>
+            <p className="text-sm text-gray-700">
+              <strong>👥 Customers:</strong> {seg.total_customers}
+            </p>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
   );
 }
 

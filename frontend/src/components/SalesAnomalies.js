@@ -1,25 +1,21 @@
 import React, { useEffect, useState } from "react";
 import axios from "../services/api";
 import { Scatter } from "react-chartjs-2";
-import { Chart, LinearScale, PointElement, Title, Tooltip, Legend, TimeScale } from "chart.js";
-import 'chartjs-adapter-date-fns';
+import { Chart as ChartJS, TimeScale, LinearScale, PointElement, Tooltip, Legend } from "chart.js";
+import "chartjs-adapter-date-fns";
+import { motion } from "framer-motion";
 
-// Register required chart.js components
-Chart.register(LinearScale, PointElement, Title, Tooltip, Legend, TimeScale);
+// Register necessary chart.js components
+ChartJS.register(TimeScale, LinearScale, PointElement, Tooltip, Legend);
 
 const SalesAnomalies = () => {
   const [anomalyData, setAnomalyData] = useState({ datasets: [] });
-  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     axios.get("/sales-anomalies/")
       .then(response => {
         const sales = response.data;
-
-        if (!Array.isArray(sales)) {
-          setMessage("⚠️ Invalid data format received.");
-          return;
-        }
 
         const normalSales = sales.filter(s => s.is_anomaly === "Normal");
         const anomalies = sales.filter(s => s.is_anomaly === "Anomaly");
@@ -28,50 +24,67 @@ const SalesAnomalies = () => {
           datasets: [
             {
               label: "Normal Sales",
-              data: normalSales.map(s => ({ x: s.date, y: s.quantity })),
-              backgroundColor: "#4CAF50"
+              data: normalSales.map(s => ({ x: s.date, y: s.revenue })),
+              backgroundColor: "#4CAF50",
+              pointRadius: 5
             },
             {
               label: "Anomalies",
-              data: anomalies.map(s => ({ x: s.date, y: s.quantity })),
-              backgroundColor: "#FF5733"
+              data: anomalies.map(s => ({ x: s.date, y: s.revenue })),
+              backgroundColor: "#FF5733",
+              pointRadius: 6
             }
           ]
         });
-        setMessage("");
       })
-      .catch(error => {
-        console.error("Error fetching sales anomalies:", error);
-        setMessage("❌ Failed to load anomaly data.");
-      });
+      .catch(error => console.error("Error fetching sales anomalies:", error))
+      .finally(() => setLoading(false));
   }, []);
 
+  if (loading) return <p className="text-gray-500">Loading anomaly chart...</p>;
+
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "top"
+      },
+      tooltip: {
+        callbacks: {
+          label: (context) => `Revenue: $${context.parsed.y.toFixed(2)}`
+        }
+      }
+    },
+    scales: {
+      x: {
+        type: "time",
+        time: {
+          unit: "day"
+        },
+        title: {
+          display: true,
+          text: "Date"
+        }
+      },
+      y: {
+        title: {
+          display: true,
+          text: "Revenue ($)"
+        }
+      }
+    }
+  };
+
   return (
-    <div className="p-4">
-      <h3 className="text-xl font-bold mb-4">🚨 Sales Anomaly Detection</h3>
-
-      {message && <p className="text-red-600">{message}</p>}
-
-      <Scatter
-        data={anomalyData}
-        options={{
-          responsive: true,
-          plugins: {
-            legend: { position: 'top' },
-            title: { display: true, text: 'Sales Anomalies by Date' }
-          },
-          scales: {
-            x: {
-              type: "time",
-              title: { display: true, text: "Date" }
-            },
-            y: {
-              title: { display: true, text: "Quantity" }
-            }
-          }
-        }}
-      />
-    </div>
+    <motion.div
+      className="p-4"
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <h2 className="text-xl font-semibold text-red-600 mb-4">🚨 Sales Anomaly Detection</h2>
+      <Scatter data={anomalyData} options={options} />
+    </motion.div>
   );
 };
 

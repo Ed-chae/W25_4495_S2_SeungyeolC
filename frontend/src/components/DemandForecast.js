@@ -1,45 +1,65 @@
 import React, { useEffect, useState } from "react";
 import api from "../services/api";
+import { motion } from "framer-motion";
 
 function DemandForecast() {
-  const [forecast, setForecast] = useState([]);
+  const [forecastData, setForecastData] = useState([]);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    api.get("/demand-forecast/")
+    api
+      .get("/demand-forecast/")
       .then((res) => {
-        if (res.data && Array.isArray(res.data.forecast)) {
-          setForecast(res.data.forecast);
-          setMessage(res.data.message || "");
+        if (res.data?.forecast) {
+          setForecastData(res.data.forecast);
+          setMessage(res.data.message);
         } else {
-          setForecast([]);
-          setMessage("⚠️ Unexpected data format received.");
+          setForecastData([]);
+          setMessage("No forecast data available.");
         }
       })
       .catch((err) => {
         console.error("Error fetching demand forecast:", err);
-        setMessage("❌ Failed to load demand forecast.");
+        setError("❌ Failed to load demand forecast.");
       });
   }, []);
 
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold mb-4">📦 Demand Forecast (Next 7 Days)</h2>
+    <motion.div
+      className="p-4 space-y-4"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <h2 className="text-xl font-bold text-indigo-700">
+        📦 Demand Forecast (Next 7 Days)
+      </h2>
 
-      {message && <p className="text-sm text-gray-600 mb-2">{message}</p>}
+      {error && <p className="text-red-500">{error}</p>}
 
-      {forecast.length === 0 ? (
-        <p className="text-gray-500">No forecast data available.</p>
+      {!error && forecastData.length === 0 ? (
+        <p className="text-gray-500">{message || "No data available."}</p>
       ) : (
-        <ul className="space-y-2">
-          {forecast.map((item, index) => (
-            <li key={index} className="bg-white shadow p-3 rounded">
-              <strong>{item.menu_item}</strong> is expected to sell <strong>{item.forecast_next_7_days}</strong> units in the next 7 days.
+        <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {forecastData.map((item, idx) => (
+            <li
+              key={idx}
+              className="bg-white rounded shadow p-4 border border-gray-200"
+            >
+              <p className="font-medium">{item.menu_item}</p>
+              <p className="text-sm text-gray-600">
+                Forecast:{" "}
+                <span className="text-indigo-600 font-semibold">
+                  {item.forecast_next_7_days}
+                </span>{" "}
+                units in 7 days
+              </p>
             </li>
           ))}
         </ul>
       )}
-    </div>
+    </motion.div>
   );
 }
 

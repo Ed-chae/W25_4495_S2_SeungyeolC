@@ -1,65 +1,72 @@
 import React, { useEffect, useState } from "react";
 import axios from "../services/api";
+import { motion } from "framer-motion";
 
-const Recommendations = ({ userId }) => {
+const Recommendations = ({ userId = 1 }) => {
   const [recommendations, setRecommendations] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!userId) {
-      setError("❌ No user ID provided.");
+      setError("⚠️ No user ID provided.");
       setLoading(false);
       return;
     }
 
     axios
       .get(`/product-recommendations/?user_id=${userId}`)
-      .then((response) => {
-        setRecommendations(response.data);
-        setError(null);
+      .then((res) => {
+        setRecommendations(res.data);
+        setError("");
       })
-      .catch((error) => {
-        console.error("Error fetching recommendations:", error);
-        setError("❌ Failed to load recommendations. Please try again.");
+      .catch((err) => {
+        console.error("Error fetching recommendations:", err);
+        setError("❌ Failed to load recommendations.");
       })
       .finally(() => setLoading(false));
   }, [userId]);
 
-  if (loading) return <p className="text-gray-600">⏳ Loading recommendations...</p>;
+  if (loading) return <p className="text-gray-500">Loading personalized recommendations...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
-  if (!recommendations) return <p>⚠️ No recommendations found.</p>;
+  if (!recommendations) return <p>No recommendations available.</p>;
 
   return (
-    <div className="bg-white shadow p-4 mb-6 rounded">
-      <h2 className="text-xl font-bold mb-4">🎯 Personalized Menu Recommendations</h2>
+    <motion.div
+      className="space-y-4"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <h2 className="text-xl font-semibold text-purple-700">🎯 Product Recommendations</h2>
 
-      {recommendations.svd_recommendations?.length > 0 ? (
-        <div className="mb-4">
-          <p className="font-semibold mb-2">📊 Based on Collaborative Filtering (SVD):</p>
-          <ul className="list-disc list-inside text-gray-700">
-            {recommendations.svd_recommendations.map((item, index) => (
-              <li key={index}>{item}</li>
+      {recommendations.svd_recommendations?.length > 0 && (
+        <div className="bg-white rounded shadow p-4">
+          <h3 className="font-medium mb-2">🧠 Collaborative Filtering (SVD)</h3>
+          <ul className="list-disc ml-5 text-sm">
+            {recommendations.svd_recommendations.map((item, idx) => (
+              <li key={idx}>{item}</li>
             ))}
           </ul>
         </div>
-      ) : (
-        <p className="text-gray-500">No collaborative filtering recommendations available.</p>
       )}
 
-      {recommendations.nn_recommendations?.length > 0 ? (
-        <div className="mb-4">
-          <p className="font-semibold mb-2">🧠 Based on Neural Network:</p>
-          <ul className="list-disc list-inside text-gray-700">
-            {recommendations.nn_recommendations.map((item, index) => (
-              <li key={index}>{item}</li>
+      {recommendations.nn_recommendations?.length > 0 && (
+        <div className="bg-white rounded shadow p-4">
+          <h3 className="font-medium mb-2">🔗 Neural Network Model</h3>
+          <ul className="list-disc ml-5 text-sm">
+            {recommendations.nn_recommendations.map((item, idx) => (
+              <li key={idx}>{item}</li>
             ))}
           </ul>
         </div>
-      ) : (
-        <p className="text-gray-500">No neural network recommendations available.</p>
       )}
-    </div>
+
+      {recommendations.svd_recommendations?.length === 0 &&
+        recommendations.nn_recommendations?.length === 0 && (
+          <p className="text-gray-500">No recommendations available for this user.</p>
+        )}
+    </motion.div>
   );
 };
 
