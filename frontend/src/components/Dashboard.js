@@ -8,7 +8,6 @@ import RevenueChart from "./RevenueChart";
 import WeatherImpact from "./WeatherImpact";
 import CustomerSegments from "./CustomerSegments";
 import DemandForecast from "./DemandForecast";
-import SalesAnomalies from "./SalesAnomalies";
 import Recommendations from "./Recommendations";
 import MarketBasket from "./MarketBasket";
 
@@ -49,7 +48,6 @@ const Dashboard = () => {
         <WeatherImpact />,
         <CustomerSegments />,
         <DemandForecast />,
-        <SalesAnomalies />,
         <Recommendations userId={1} />,
         <MarketBasket />,
       ].map((Component, index) => (

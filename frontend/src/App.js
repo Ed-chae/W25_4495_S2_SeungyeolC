@@ -5,7 +5,6 @@ import RevenueChart from "./components/RevenueChart";
 import WeatherImpact from "./components/WeatherImpact";
 import CustomerSegments from "./components/CustomerSegments";
 import DemandForecast from "./components/DemandForecast";
-import SalesAnomalies from "./components/SalesAnomalies";
 import Recommendations from "./components/Recommendations";
 import MarketBasket from "./components/MarketBasket";
 import ResetButton from "./components/ResetButton";
@@ -22,7 +21,6 @@ function App() {
             <WeatherImpact />
             <CustomerSegments />
             <DemandForecast />
-            <SalesAnomalies />
             <Recommendations />
             <MarketBasket />
         </div>

@@ -9,7 +9,6 @@ from revenue_forecasting import forecast_revenue
 from weather_analysis import predict_revenue_impact
 from customer_segmentation import segment_customers
 from demand_forecasting import forecast_demand
-from anomaly_detection import detect_sales_anomalies
 from product_recommendation import recommend_products
 from market_basket_analysis import market_basket_analysis
 
@@ -173,16 +172,6 @@ def get_demand_forecast():
     except Exception as e:
         return {"forecast": [], "message": str(e)}
 
-
-# -----------------------------------
-# 🚨 Anomaly Detection
-# -----------------------------------
-@router.get("/sales-anomalies/")
-def get_sales_anomalies():
-    try:
-        return detect_sales_anomalies()
-    except Exception as e:
-        return {"anomalies": [], "message": str(e)}
 
 
 # -----------------------------------
