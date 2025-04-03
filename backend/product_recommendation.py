@@ -57,19 +57,18 @@ def fetch_purchase_data():
 # 🔢 SVD Collaborative Filtering
 # -----------------------------------
 def collaborative_filtering(df):
-    matrix = df.pivot(index="customer_id", columns="item", values="rating").fillna(0)
-    if matrix.shape[0] < 2 or matrix.shape[1] < 2:
-        return {}
-
+    matrix = df.groupby(["customer_id", "item"])["rating"].mean().unstack().fillna(0)
+    
     svd = TruncatedSVD(n_components=5, random_state=42)
     item_matrix = svd.fit_transform(matrix)
 
-    recs = defaultdict(list)
+    recs = {}
     for i, user_id in enumerate(matrix.index):
         top_indices = np.argsort(item_matrix[i])[-3:]
         recs[user_id] = [matrix.columns[j] for j in top_indices]
 
     return recs
+
 
 # -----------------------------------
 # 🧠 Train Neural Network

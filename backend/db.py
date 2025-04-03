@@ -9,12 +9,8 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 
-# ---------------------------------------
-# Updated SalesData Table with Order ID
-# ---------------------------------------
 class SalesData(Base):
     __tablename__ = "sales"
-
     id = Column(Integer, primary_key=True, index=True)
     order_id = Column(String)
     date = Column(Date)
@@ -24,12 +20,8 @@ class SalesData(Base):
     review = Column(String)
     weather = Column(String)
 
-# ---------------------------------------
-# Updated RestaurantOrder Table with Order ID
-# ---------------------------------------
 class RestaurantOrder(Base):
     __tablename__ = "restaurant_orders"
-
     id = Column(Integer, primary_key=True, index=True)
     order_id = Column(String)
     date = Column(Date)
@@ -39,24 +31,18 @@ class RestaurantOrder(Base):
     review = Column(String)
     weather = Column(String)
 
-# Create both tables if they don't already exist
 Base.metadata.create_all(bind=engine)
 
-# ---------------------------------------
-# Save Functions
-# ---------------------------------------
-
 def save_sales_data(df: pd.DataFrame):
-    """Saves processed sales data to PostgreSQL."""
     session = SessionLocal()
     for _, row in df.iterrows():
         entry = SalesData(
-            order_id=row.get("order id", None),
+            order_id=row.get("order_id"),
             date=row["date"],
-            product=row.get("product", ""),
+            product=row["product"],
             quantity=int(row.get("quantity", 1)),
-            revenue=float(row.get("revenue", 0)),
-            review=row.get("review", ""),
+            revenue=row["revenue"],
+            review=row.get("review"),
             weather=row.get("weather", "")
         )
         session.add(entry)
@@ -64,16 +50,15 @@ def save_sales_data(df: pd.DataFrame):
     session.close()
 
 def save_restaurant_orders(df: pd.DataFrame):
-    """Saves processed restaurant orders to PostgreSQL."""
     session = SessionLocal()
     for _, row in df.iterrows():
         order = RestaurantOrder(
-            order_id=row.get("order id", None),
+            order_id=row.get("order_id"),
             date=row["date"],
-            menu_item=row["menu"],
+            menu_item=row["menu_item"],
             quantity=int(row["quantity"]),
             price=float(row["price"]),
-            review=row.get("review", ""),
+            review=row.get("review"),
             weather=row.get("weather", "")
         )
         session.add(order)
