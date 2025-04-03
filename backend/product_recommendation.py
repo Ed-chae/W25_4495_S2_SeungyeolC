@@ -38,15 +38,20 @@ def fetch_purchase_data():
     orders = session.query(RestaurantOrder).filter(RestaurantOrder.menu_item != None).all()
     session.close()
 
-    df = pd.DataFrame([
-        {
-            "customer_id": o.order_id,  # use order_id as proxy for user
-            "item": o.menu_item,
-            "rating": np.random.randint(3, 6)  # simulate positive interactions
-        }
-        for o in orders if o.order_id and o.menu_item
-    ])
+    df = pd.DataFrame([{
+        "order_id": o.order_id,
+        "item": o.menu_item,
+        "rating": 5 if "love" in str(o.review).lower() or "great" in str(o.review).lower() else 2,
+        "customer_id": hash(o.order_id) % 1000  # pseudo user
+    } for o in orders])
+
+    # Normalize column names
+    df.columns = df.columns.str.strip().str.lower()
+    if "order id" in df.columns:
+        df.rename(columns={"order id": "order_id"}, inplace=True)
+
     return df
+
 
 # -----------------------------------
 # 🔢 SVD Collaborative Filtering
