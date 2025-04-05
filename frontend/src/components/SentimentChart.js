@@ -1,93 +1,55 @@
+// src/components/SentimentChart.js
 import React, { useEffect, useState } from "react";
-import api from "../services/api";
-import { motion } from "framer-motion";
+import axios from "../services/api";
 
-function SentimentChart() {
-  const [summaryData, setSummaryData] = useState([]);
+const SentimentChart = () => {
+  const [data, setData] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    api
+    axios
       .get("/sentiment-results/")
-      .then((res) => {
-        console.log("Sentiment API response:", res.data); // Debug: Check backend structure
-
-        const summary = Array.isArray(res.data) ? res.data : res.data?.summary;
-
-        if (Array.isArray(summary) && summary.length > 0) {
-          const processed = summary.map((item) => {
-            const positivity =
-              item.negative / (item.positive + item.negative) < 0.5
-                ? "😊 Positive"
-                : "😟 Negative";
-
-            return {
-              item: item.item,
-              positive: item.positive,
-              negative: item.negative,
-              summary: item.summary,
-              mood: positivity,
-            };
-          });
-          setSummaryData(processed);
-        } else {
-          setSummaryData([]);
-        }
-      })
+      .then((res) => setData(res.data))
       .catch((err) => {
-        console.error("Error fetching sentiment results:", err);
-        setError("❌ Failed to load sentiment summary.");
+        console.error("❌ Sentiment error:", err);
+        setError("Failed to fetch sentiment data.");
       });
   }, []);
 
+  if (error) return <div className="text-red-500">{error}</div>;
+  if (!data) return <div>Loading sentiment analysis...</div>;
+
   return (
-    <motion.div
-      className="p-4"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <h2 className="text-xl font-bold mb-4 text-indigo-700">
-        🧠 Customer Sentiment Summary
-      </h2>
+    <div className="p-4 bg-white rounded shadow">
+      <h2 className="text-xl font-semibold mb-2">🧠 Customer Sentiment Analysis</h2>
+      <p className="mb-2 text-green-700">✅ Best item: <strong>{data.best_item}</strong></p>
+      <p className="mb-4 text-red-600">⚠️ Worst item: <strong>{data.worst_item}</strong></p>
 
-      {error && <p className="text-red-500">{error}</p>}
-
-      {!error && summaryData.length === 0 ? (
-        <p className="text-gray-500">No sentiment summary available.</p>
-      ) : summaryData.length > 0 ? (
-        <div className="overflow-x-auto">
-          <table className="min-w-full border border-gray-300 text-sm bg-white rounded shadow">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="p-2 border">Item</th>
-                <th className="p-2 border">👍 Positive</th>
-                <th className="p-2 border">👎 Negative</th>
-                <th className="p-2 border">Sentiment</th>
-              </tr>
-            </thead>
-            <tbody>
-              {summaryData.map((row, idx) => (
-                <tr key={idx} className="hover:bg-gray-50 text-center">
-                  <td className="p-2 border">{row.item}</td>
-                  <td className="p-2 border">{row.positive}</td>
-                  <td className="p-2 border">{row.negative}</td>                  <td
-                    className={`p-2 border font-semibold ${
-                      row.mood.includes("Positive")
-                        ? "text-green-600"
-                        : "text-red-500"
-                    }`}
-                  >
-                    {row.mood}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
-    </motion.div>
+      <h3 className="font-semibold mb-2">📋 Sentiment Summary</h3>
+      <table className="table-auto w-full text-sm border">
+        <thead className="bg-gray-100">
+          <tr>
+            <th className="px-2 py-1 text-left border">Item</th>
+            <th className="px-2 py-1 text-left border">Positive %</th>
+            <th className="px-2 py-1 text-left border">Negative %</th>
+            <th className="px-2 py-1 text-left border">Positive</th>
+            <th className="px-2 py-1 text-left border">Negative</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.summary.map((item, i) => (
+            <tr key={i} className="border-t hover:bg-gray-50">
+              <td className="px-2 py-1">{item.item}</td>
+              <td className="px-2 py-1 text-green-700">{item.positive_pct}%</td>
+              <td className="px-2 py-1 text-red-600">{item.negative_pct}%</td>
+              <td className="px-2 py-1">{item.positive}</td>
+              <td className="px-2 py-1">{item.negative}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
-}
+};
 
 export default SentimentChart;
