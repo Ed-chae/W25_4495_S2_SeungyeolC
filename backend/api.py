@@ -4,7 +4,7 @@ from pathlib import Path
 
 from db import SessionLocal, SalesData, RestaurantOrder
 from file_processing import process_sales_data
-from sentiment_analysis import sentiment_summary
+from sentiment_analysis import analyze_sentiment
 from revenue_forecasting import forecast_revenue
 from weather_analysis import predict_revenue_impact
 from customer_segmentation import segment_customers
@@ -97,7 +97,7 @@ def get_sentiment_summary(db: Session = Depends(get_db)):
 
     for r in sales_reviews:
         item = r.product
-        sentiment = sentiment_summary(r.review)["label"]
+        sentiment = analyze_sentiment(r.review)["label"]
         if item not in summary:
             summary[item] = {"positive": 0, "negative": 0}
         if sentiment == "POSITIVE":
@@ -107,7 +107,7 @@ def get_sentiment_summary(db: Session = Depends(get_db)):
 
     for r in restaurant_reviews:
         item = r.menu_item
-        sentiment = sentiment_summary(r.review)["label"]
+        sentiment = analyze_sentiment(r.review)["label"]
         if item not in summary:
             summary[item] = {"positive": 0, "negative": 0}
         if sentiment == "POSITIVE":
