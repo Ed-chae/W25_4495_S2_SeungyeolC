@@ -25,10 +25,15 @@ const MarketBasket = () => {
   };
 
   const formatRule = (rule) => (
-    <li key={`${rule.antecedents}-${rule.consequents}`}>
-      <strong>{rule.antecedents.join(", ")} → {rule.consequents.join(", ")}</strong>{" "}
-      | Support: {rule.support.toFixed(2)} | Confidence: {rule.confidence.toFixed(2)} | Lift: {rule.lift.toFixed(2)}
-    </li>
+    <div
+      key={`${rule.antecedents}-${rule.consequents}`}
+      className="mb-2 p-2 border border-gray-200 rounded bg-gray-50"
+    >
+      <div className="font-semibold">{rule.antecedents.join(", ")} → {rule.consequents.join(", ")}</div>
+      <div className="text-sm text-gray-600">
+        Support: {rule.support.toFixed(2)} | Confidence: {rule.confidence.toFixed(2)} | Lift: {rule.lift.toFixed(2)}
+      </div>
+    </div>
   );
 
   if (error) return <div className="text-red-500">{error}</div>;
@@ -46,23 +51,17 @@ const MarketBasket = () => {
 
       <div className="mb-6">
         <h3 className="text-lg font-semibold mb-2">⭐ Top 3 by Support (most common pairs)</h3>
-        <ul className="list-disc ml-6 space-y-1">
-          {getTopRules("support").map(formatRule)}
-        </ul>
+        {getTopRules("support").map(formatRule)}
       </div>
 
       <div className="mb-6">
         <h3 className="text-lg font-semibold mb-2">🚀 Top 3 by Confidence (most predictable)</h3>
-        <ul className="list-disc ml-6 space-y-1">
-          {getTopRules("confidence").map(formatRule)}
-        </ul>
+        {getTopRules("confidence").map(formatRule)}
       </div>
 
       <div>
         <h3 className="text-lg font-semibold mb-2">📈 Top 3 by Lift (strongest associations)</h3>
-        <ul className="list-disc ml-6 space-y-1">
-          {getTopRules("lift").map(formatRule)}
-        </ul>
+        {getTopRules("lift").map(formatRule)}
       </div>
     </div>
   );

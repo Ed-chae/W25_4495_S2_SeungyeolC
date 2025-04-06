@@ -8,6 +8,7 @@ import DemandForecast from "./components/DemandForecast";
 import Recommendations from "./components/Recommendations";
 import MarketBasket from "./components/MarketBasket";
 import ResetButton from "./components/ResetButton";
+import MenuCategoryChart from "./components/MenuCategoryChart";
 import "./styles.css";
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
             <FileUpload />
             <ResetButton />
             <SentimentChart />
+            <MenuCategoryChart />
             <RevenueChart />
             <WeatherImpact />
             <CustomerSegments />

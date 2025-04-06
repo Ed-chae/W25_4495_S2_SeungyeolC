@@ -11,6 +11,8 @@ from customer_segmentation import segment_customers
 from demand_forecasting import forecast_demand
 from product_recommendation import recommend_products
 from market_basket_analysis import market_basket_analysis
+from menu_category_analysis import categorize_menu_items_ai
+
 
 router = APIRouter()
 
@@ -194,3 +196,13 @@ def get_market_basket_analysis():
         return market_basket_analysis()
     except Exception as e:
         return {"rules": [], "message": str(e)}
+    
+# -----------------------------------
+# 🛒 Menu Sales chart
+# -----------------------------------
+@router.get("/menu-categories/")
+def get_menu_categories():
+    try:
+        return categorize_menu_items_ai()
+    except Exception as e:
+        return {"categories": {}, "message": str(e)}
