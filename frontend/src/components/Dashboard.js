@@ -10,7 +10,7 @@ import CustomerSegments from "./CustomerSegments";
 import DemandForecast from "./DemandForecast";
 import Recommendations from "./Recommendations";
 import MarketBasket from "./MarketBasket";
-import MenuSalesPie from "./MenuCategoryChart";
+import MenuCategoryChart from "./MenuCategoryChart";
 
 const Dashboard = () => {
   const fadeInUp = {
@@ -45,7 +45,7 @@ const Dashboard = () => {
 
       {[
         <SentimentChart />,
-        <MenuSalesPie />,
+        <MenuCategoryChart />,
         <RevenueChart />,
         <WeatherImpact />,
         <CustomerSegments />,

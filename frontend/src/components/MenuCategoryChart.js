@@ -3,43 +3,56 @@ import React, { useEffect, useState } from "react";
 import axios from "../services/api";
 import { Pie } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const MenuCategoryChart = () => {
-  const [categories, setCategories] = useState({});
+  const [categoryData, setCategoryData] = useState({});
   const [error, setError] = useState("");
 
   useEffect(() => {
     axios
-      .get("/menu-categories/")
+      .get("/menu-category/")
       .then((res) => {
-        setCategories(res.data.categories);
+        setCategoryData(res.data.categories);
       })
       .catch((err) => {
-        console.error("❌ Error fetching menu categories:", err);
+        console.error("Failed to load menu category data.", err);
         setError("Failed to load menu category data.");
       });
   }, []);
 
   if (error) return <div className="text-red-500">{error}</div>;
-  if (!Object.keys(categories).length) return <div>Loading...</div>;
-
-  const data = {
-    labels: Object.keys(categories),
-    datasets: [
-      {
-        data: Object.values(categories),
-        backgroundColor: [
-          "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF", "#FF9F40"
-        ]
-      }
-    ]
-  };
+  if (!categoryData || Object.keys(categoryData).length === 0)
+    return <p>Loading menu category charts...</p>;
 
   return (
-    <div className="p-4 bg-white rounded shadow mt-6">
+    <div className="p-4">
       <h2 className="text-xl font-semibold mb-4">🍽️ Menu Category Breakdown</h2>
-      <Pie data={data} />
+      {Object.entries(categoryData).map(([category, items], idx) => {
+        const labels = Object.keys(items);
+        const values = Object.values(items);
+
+        const data = {
+          labels,
+          datasets: [
+            {
+              label: `${category} Items`,
+              data: values,
+              backgroundColor: [
+                "#4ade80", "#60a5fa", "#facc15", "#f472b6", "#c084fc", "#f87171"
+              ]
+            }
+          ]
+        };
+
+        return (
+          <div key={idx} className="mb-8">
+            <h3 className="text-lg font-semibold mb-2">{category}</h3>
+            <Pie data={data} />
+          </div>
+        );
+      })}
     </div>
   );
 };
