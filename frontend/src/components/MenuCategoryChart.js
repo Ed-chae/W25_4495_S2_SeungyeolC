@@ -14,7 +14,7 @@ const MenuCategoryChart = () => {
     axios
       .get("/menu-category/")
       .then((res) => {
-        setCategoryData(res.data.categories);
+        setCategoryData(res.data.categories || {});
       })
       .catch((err) => {
         console.error("Failed to load menu category data.", err);
@@ -28,31 +28,56 @@ const MenuCategoryChart = () => {
 
   return (
     <div className="p-4">
-      <h2 className="text-xl font-semibold mb-4">🍽️ Menu Category Breakdown</h2>
-      {Object.entries(categoryData).map(([category, items], idx) => {
-        const labels = Object.keys(items);
-        const values = Object.values(items);
+      <h2 className="text-xl font-semibold mb-6">🍽️ Menu Category Breakdown</h2>
 
-        const data = {
-          labels,
-          datasets: [
-            {
-              label: `${category} Items`,
-              data: values,
-              backgroundColor: [
-                "#4ade80", "#60a5fa", "#facc15", "#f472b6", "#c084fc", "#f87171"
-              ]
-            }
-          ]
-        };
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Object.entries(categoryData).map(([category, items], idx) => {
+          // Sort items within the category by sold count
+          const sortedItems = Object.entries(items)
+            .sort((a, b) => b[1] - a[1]); // Descending order
 
-        return (
-          <div key={idx} className="mb-8">
-            <h3 className="text-lg font-semibold mb-2">{category}</h3>
-            <Pie data={data} />
-          </div>
-        );
-      })}
+          const labels = sortedItems.map(([item]) => item);
+          const values = sortedItems.map(([, count]) => count);
+          const topItem = labels[0];
+
+          const data = {
+            labels,
+            datasets: [
+              {
+                label: `${category} Items`,
+                data: values,
+                backgroundColor: [
+                  "#4ade80", "#60a5fa", "#facc15", "#f472b6", "#c084fc", "#f87171",
+                  "#34d399", "#fcd34d", "#fca5a5", "#a78bfa",
+                ],
+              },
+            ],
+          };
+
+          const options = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: "bottom" },
+            },
+          };
+
+          return (
+            <div
+              key={idx}
+              className="bg-white rounded-xl shadow p-4 h-[430px] flex flex-col"
+            >
+              <h3 className="text-md font-semibold text-center mb-2">{category}</h3>
+              <p className="text-sm text-center text-green-700 mb-2">
+                🥇 Top item: <strong>{topItem}</strong>
+              </p>
+              <div className="flex-grow">
+                <Pie data={data} options={options} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };

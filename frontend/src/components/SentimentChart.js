@@ -29,11 +29,9 @@ function SentimentChart() {
             };
           });
 
-          // Sort by highest positive percentage
           const sorted = [...processed].sort((a, b) => b.positive_pct - a.positive_pct);
           setSummaryData(sorted);
 
-          // Best and Worst items
           const best = sorted[0];
           const worst = sorted.reduce((prev, curr) =>
             curr.negative_pct > prev.negative_pct ? curr : prev
@@ -53,12 +51,12 @@ function SentimentChart() {
 
   return (
     <motion.div
-      className="p-4"
+      className="bg-white rounded-xl shadow-md p-6"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <h2 className="text-xl font-bold mb-4 text-indigo-700">
+      <h2 className="text-2xl font-semibold text-indigo-700 mb-4">
         🧠 Customer Sentiment Summary
       </h2>
 
@@ -68,26 +66,43 @@ function SentimentChart() {
         <p className="text-gray-500">No sentiment summary available.</p>
       ) : summaryData.length > 0 ? (
         <div className="space-y-4">
-          {bestItem && <p className="text-green-700">✅ Best item: <strong>{bestItem}</strong></p>}
-          {worstItem && <p className="text-red-600">⚠️ Worst item: <strong>{worstItem}</strong></p>}
+          <div className="text-sm">
+            {bestItem && (
+              <p className="text-green-600">
+                ✅ <strong>Best item:</strong> {bestItem}
+              </p>
+            )}
+            {worstItem && (
+              <p className="text-red-500">
+                ⚠️ <strong>Worst item:</strong> {worstItem}
+              </p>
+            )}
+          </div>
 
           <div className="overflow-x-auto">
-            <table className="min-w-full border border-gray-300 text-sm bg-white rounded shadow">
-              <thead className="bg-gray-100">
+            <table className="min-w-full border border-gray-200 text-sm rounded-md overflow-hidden">
+              <thead className="bg-gray-100 text-gray-700">
                 <tr>
-                  <th className="p-2 border">Item</th>
-                  <th className="p-2 border">👍 Positive %</th>
-                  <th className="p-2 border">👎 Negative %</th>
-                  <th className="p-2 border">Total Reviews</th>
+                  <th className="px-4 py-2 border">Item</th>
+                  <th className="px-4 py-2 border text-green-600">👍 Positive %</th>
+                  <th className="px-4 py-2 border text-red-600">👎 Negative %</th>
+                  <th className="px-4 py-2 border">🧾 Total Reviews</th>
                 </tr>
               </thead>
               <tbody>
-                {summaryData.map((row, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50 text-center">
-                    <td className="p-2 border">{row.item}</td>
-                    <td className="p-2 border text-green-600 font-medium">{row.positive_pct}%</td>
-                    <td className="p-2 border text-red-500 font-medium">{row.negative_pct}%</td>
-                    <td className="p-2 border">{row.total_reviews}</td>
+                {summaryData.map((row, i) => (
+                  <tr
+                    key={i}
+                    className="text-center hover:bg-gray-50 transition duration-200"
+                  >
+                    <td className="px-4 py-2 border font-medium">{row.item}</td>
+                    <td className="px-4 py-2 border text-green-600 font-semibold">
+                      {row.positive_pct}%
+                    </td>
+                    <td className="px-4 py-2 border text-red-600 font-semibold">
+                      {row.negative_pct}%
+                    </td>
+                    <td className="px-4 py-2 border">{row.total_reviews}</td>
                   </tr>
                 ))}
               </tbody>
