@@ -1,3 +1,4 @@
+// src/components/RevenueChart.js
 import React, { useEffect, useState } from "react";
 import axios from "../services/api";
 import { Line } from "react-chartjs-2";
@@ -31,9 +32,8 @@ const RevenueChart = () => {
     axios.get("/revenue-forecast/")
       .then(response => {
         const prophetData = response.data.prophet_forecast;
-        const lstmData = response.data.lstm_forecast;
 
-        if (!prophetData?.length && !lstmData?.length) {
+        if (!prophetData?.length) {
           setError("No forecast data available.");
           return;
         }
@@ -42,11 +42,13 @@ const RevenueChart = () => {
           labels: prophetData.map(d => d.ds),
           datasets: [
             {
-              label: "Prophet Forecast",
+              label: "📈 Prophet Forecast",
               data: prophetData.map(d => d.yhat),
               borderColor: "#3B82F6",
+              backgroundColor: "rgba(59, 130, 246, 0.1)",
+              pointRadius: 3,
               tension: 0.4,
-              fill: false,
+              fill: true,
             }
           ]
         });
@@ -59,18 +61,43 @@ const RevenueChart = () => {
 
   return (
     <motion.div
-      className="p-4"
+      className="dashboard-card"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
-      <h2 className="text-xl font-semibold mb-4 text-blue-700">📊 Revenue Forecast (Next 30 Days)</h2>
+      <h2 className="text-xl font-semibold text-blue-700 mb-2">📊 Revenue Forecast (Next 30 Days)</h2>
+      <p className="text-sm text-gray-600 mb-4">
+        This chart shows the expected revenue based on past trends using Prophet.
+      </p>
 
-      {error && <p className="text-red-500">{error}</p>}
+      {error && <p className="text-red-500 text-sm">{error}</p>}
 
       {!error && forecastData.labels.length > 0 && (
-        <div className="bg-white rounded shadow p-4">
-          <Line data={forecastData} />
+        <div className="overflow-x-auto">
+          <Line
+            data={forecastData}
+            options={{
+              responsive: true,
+              plugins: {
+                legend: { position: "top" },
+                tooltip: { mode: "index", intersect: false },
+              },
+              scales: {
+                y: {
+                  title: {
+                    display: true,
+                    text: "Revenue ($)"
+                  }
+                },
+                x: {
+                  ticks: {
+                    maxTicksLimit: 10
+                  }
+                }
+              }
+            }}
+          />
         </div>
       )}
     </motion.div>

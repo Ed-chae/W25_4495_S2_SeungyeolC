@@ -1,8 +1,9 @@
 // src/components/DemandForecast.js
 import React, { useEffect, useState } from "react";
 import api from "../services/api";
+import { motion } from "framer-motion";
 
-function DemandForecast() {
+const DemandForecast = () => {
   const [forecastData, setForecastData] = useState([]);
   const [error, setError] = useState("");
 
@@ -23,24 +24,42 @@ function DemandForecast() {
   }, []);
 
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold mb-4">📦 Demand Forecast (Next 7 Days)</h2>
+    <motion.div
+      className="dashboard-card"
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <h2 className="text-2xl font-semibold text-blue-700 mb-4">
+        📦 Demand Forecast (Next 7 Days)
+      </h2>
 
-      {error && <p className="text-red-600">{error}</p>}
+      {error && <p className="text-red-500">{error}</p>}
 
-      {forecastData.length > 0 ? (
-        <ul className="space-y-2">
-          {forecastData.map((item, index) => (
-            <li key={index} className="bg-white shadow p-3 rounded">
-              <strong>{item.product}</strong>: Forecast {item.forecast_next_7_days} units in 7 days
-            </li>
-          ))}
-        </ul>
+      {!error && forecastData.length > 0 ? (
+        <div className="centered-table">
+          <table className="min-w-full text-sm border border-gray-200 rounded-md overflow-hidden">
+            <thead className="bg-gray-100 text-gray-700">
+              <tr>
+                <th className="px-4 py-2 border">Item Name</th>
+                <th className="px-4 py-2 border">Expected Demand (7 days)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {forecastData.map((item, index) => (
+                <tr key={index} className="text-center hover:bg-gray-50">
+                  <td className="px-4 py-2 border font-medium">{item.product}</td>
+                  <td className="px-4 py-2 border">{item.forecast_next_7_days}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : (
-        !error && <p>No forecast data available.</p>
+        !error && <p className="text-gray-500">No forecast data available.</p>
       )}
-    </div>
+    </motion.div>
   );
-}
+};
 
 export default DemandForecast;

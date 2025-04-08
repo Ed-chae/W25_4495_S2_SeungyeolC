@@ -51,16 +51,14 @@ function SentimentChart() {
 
   return (
     <motion.div
-      className="bg-white rounded-xl shadow-md p-6"
+      className="dashboard-card"
       initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <h2 className="text-2xl font-semibold text-indigo-700 mb-4">
-        🧠 Customer Sentiment Summary
-      </h2>
+      <h2 className="text-2xl font-bold text-indigo-700 mb-3">🧠 Customer Sentiment Summary</h2>
 
-      {error && <p className="text-red-500">{error}</p>}
+      {error && <p className="text-red-500 text-sm">{error}</p>}
 
       {!error && summaryData.length === 0 ? (
         <p className="text-gray-500">No sentiment summary available.</p>
@@ -79,8 +77,8 @@ function SentimentChart() {
             )}
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full border border-gray-200 text-sm rounded-md overflow-hidden">
+          <div className="centered-table">
+            <table className="min-w-full border border-gray-200 text-sm rounded overflow-hidden">
               <thead className="bg-gray-100 text-gray-700">
                 <tr>
                   <th className="px-4 py-2 border">Item</th>
@@ -89,7 +87,7 @@ function SentimentChart() {
                   <th className="px-4 py-2 border">🧾 Total Reviews</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-100">
                 {summaryData.map((row, i) => (
                   <tr
                     key={i}

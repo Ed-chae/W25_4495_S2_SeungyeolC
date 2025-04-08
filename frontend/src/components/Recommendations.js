@@ -1,3 +1,4 @@
+// src/components/Recommendations.js
 import React, { useEffect, useState } from "react";
 import axios from "../services/api";
 import { motion } from "framer-motion";
@@ -33,32 +34,32 @@ const Recommendations = ({ userId = 1 }) => {
 
   return (
     <motion.div
-      className="space-y-4"
+      className="dashboard-card"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <h2 className="text-xl font-semibold text-purple-700">🎯 Product Recommendations</h2>
+      <h2 className="text-xl font-bold text-purple-700 mb-4">🎯 Product Recommendations</h2>
 
       {recommendations.svd_recommendations?.length > 0 && (
-        <div className="bg-white rounded shadow p-4">
-          <h3 className="font-medium mb-2">🧠 Collaborative Filtering (SVD)</h3>
-          <ul className="list-disc ml-5 text-sm">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">🧠 Based on Collaborative Filtering</h3>
+          <div className="space-y-1 text-sm text-gray-800">
             {recommendations.svd_recommendations.map((item, idx) => (
-              <li key={idx}>{item}</li>
+              <div key={idx} className="p-2 bg-purple-50 rounded">{item}</div>
             ))}
-          </ul>
+          </div>
         </div>
       )}
 
       {recommendations.nn_recommendations?.length > 0 && (
-        <div className="bg-white rounded shadow p-4">
-          <h3 className="font-medium mb-2">🔗 Neural Network Model</h3>
-          <ul className="list-disc ml-5 text-sm">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">🔗 Based on Neural Network</h3>
+          <div className="space-y-1 text-sm text-gray-800">
             {recommendations.nn_recommendations.map((item, idx) => (
-              <li key={idx}>{item}</li>
+              <div key={idx} className="p-2 bg-indigo-50 rounded">{item}</div>
             ))}
-          </ul>
+          </div>
         </div>
       )}
 
