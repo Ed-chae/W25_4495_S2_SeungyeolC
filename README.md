@@ -85,14 +85,14 @@ python -m venv venv
 source venv/bin/activate  # Mac/Linux
 venv\Scripts\activate  # Windows
 pip install -r requirements.txt
-uvicorn api:app --reload
+uvicorn main:app --reload
 ```
 API runs at: **http://127.0.0.1:8000**
 
 ### ** Set Up the Frontend**
 ```bash
 cd frontend
-npm install
+npm install react react-dom axios framer-motion chart.js react-chartjs-2 html2pdf.js
 npm start
 ```
 Frontend runs at: **http://localhost:3000**

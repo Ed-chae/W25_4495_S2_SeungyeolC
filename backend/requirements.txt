@@ -1,15 +1,32 @@
+# Core Backend
 fastapi
 uvicorn
+python-multipart
+pydantic
 sqlalchemy
-psycopg2
+psycopg2-binary
+
+# ML & Analytics
+scikit-learn
 pandas
 numpy
-scikit-learn
-torch
-transformers
-tensorflow
-xgboost
+matplotlib
 prophet
 mlxtend
+transformers
+torch
+openai
+tqdm
+
+# Weather & HTTP
 requests
+httpx
+
+# Excel Support
+openpyxl
+
+# PDF Export (if needed server-side)
+fpdf
+
+# For .env configuration
 python-dotenv
