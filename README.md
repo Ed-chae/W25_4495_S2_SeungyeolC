@@ -74,7 +74,7 @@ Intelligent_Business_Analytics_System/ │── backend/ # FastAPI Backend │ 
 ##  **Installation & Setup**
 ### ** Clone the Repository**
 ```bash
-git clone https://github.com/YOUR_GITHUB_USERNAME/Intelligent_Business_Analytics_System.git
+git clone https://github.com/Ed-chae/W25_4495_S2_SeungyeolC.git
 cd Intelligent_Business_Analytics_System
 ```
 
