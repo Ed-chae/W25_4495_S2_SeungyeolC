@@ -1,7 +1,6 @@
 from transformers import pipeline
 
-# Load sentiment model once globally
-sentiment_pipeline = pipeline("sentiment-analysis")
+sentiment_pipeline = pipeline("sentiment-analysis", framework="pt")
 
 def analyze_sentiment(text):
     """

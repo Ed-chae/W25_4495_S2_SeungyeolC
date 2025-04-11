@@ -1,4 +1,3 @@
-# ✅ product_recommendation.py (updated to use order_id as user_id)
 import pandas as pd
 import numpy as np
 import torch
@@ -42,23 +41,21 @@ def fetch_purchase_data():
         "order_id": o.order_id,
         "item": o.menu_item,
         "rating": 5 if "love" in str(o.review).lower() or "great" in str(o.review).lower() else 2,
-        "customer_id": hash(o.order_id) % 1000  # pseudo user
+        "customer_id": abs(hash(str(o.order_id))) % 1000  # pseudo user
     } for o in orders])
 
-    # Normalize column names
     df.columns = df.columns.str.strip().str.lower()
     if "order id" in df.columns:
         df.rename(columns={"order id": "order_id"}, inplace=True)
 
     return df
 
-
 # -----------------------------------
 # 🔢 SVD Collaborative Filtering
 # -----------------------------------
 def collaborative_filtering(df):
     matrix = df.groupby(["customer_id", "item"])["rating"].mean().unstack().fillna(0)
-    
+
     svd = TruncatedSVD(n_components=5, random_state=42)
     item_matrix = svd.fit_transform(matrix)
 
@@ -68,7 +65,6 @@ def collaborative_filtering(df):
         recs[user_id] = [matrix.columns[j] for j in top_indices]
 
     return recs
-
 
 # -----------------------------------
 # 🧠 Train Neural Network
@@ -108,23 +104,33 @@ def recommend_products(user_id: str):
     if df.empty:
         return {"error": "No purchase data available for recommendations."}
 
+    try:
+        user_id_int = int(user_id)
+    except ValueError:
+        return {"error": f"Invalid user_id '{user_id}' — must be numeric."}
+
     svd_recs = collaborative_filtering(df)
     model, user_to_idx, item_to_idx = train_neural_network(df)
 
-    user_idx = user_to_idx.get(user_id)
+    user_idx = user_to_idx.get(user_id_int)
     if user_idx is None:
         return {"error": f"User {user_id} not found."}
 
-    item_scores = {}
+    item_scores = []
     for item, idx in item_to_idx.items():
         user_tensor = torch.tensor([user_idx], dtype=torch.long)
         item_tensor = torch.tensor([idx], dtype=torch.long)
         score = model(user_tensor, item_tensor).item()
-        item_scores[item] = score
+        item_scores.append((item, score))
 
-    top_nn_recs = sorted(item_scores, key=item_scores.get, reverse=True)[:3]
+    # ✅ Remove already purchased items
+    purchased_items = df[df["customer_id"] == user_id_int]["item"].tolist()
+    filtered_scores = [item for item in item_scores if item[0] not in purchased_items]
+
+    # ✅ Get top 3 recommendations
+    top_nn_recs = [item for item, _ in sorted(filtered_scores, key=lambda x: x[1], reverse=True)[:3]]
 
     return {
-        "svd_recommendations": svd_recs.get(user_id, []),
+        "svd_recommendations": svd_recs.get(user_id_int, []),
         "nn_recommendations": top_nn_recs
     }

@@ -9,7 +9,11 @@ from collections import defaultdict
 load_dotenv()
 
 # Load zero-shot classifier from Hugging Face
-classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+classifier = pipeline(
+    "zero-shot-classification",
+    model="facebook/bart-large-mnli",
+    framework="pt"  # <-- Force PyTorch
+)
 
 CATEGORIES = ["Drink", "Appetizer", "Main", "Dessert"]
 
