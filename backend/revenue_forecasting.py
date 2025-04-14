@@ -19,7 +19,7 @@ def forecast_revenue():
 
     df = pd.DataFrame([{
         "ds": o.date,
-        "y": o.quantity * o.price
+        "y": o.quantity * o.price * 20
     } for o in orders])
 
     if df.empty or "ds" not in df.columns or "y" not in df.columns:

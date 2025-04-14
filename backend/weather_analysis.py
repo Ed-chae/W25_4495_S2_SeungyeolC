@@ -48,7 +48,7 @@ def correlate_weather_sales():
         weather = fetch_historical_weather("Vancouver", o.date)
         data.append({
             "date": o.date,
-            "revenue": o.quantity * o.price,
+            "revenue": o.quantity * o.price * 20,
             "temperature": weather["temperature"],
             "humidity": weather["humidity"],
             "weather_condition": weather["weather"]
