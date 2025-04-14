@@ -22,7 +22,7 @@ const MarketBasket = () => {
   const getTopRules = (metric) => {
     return [...rules]
       .sort((a, b) => b[metric] - a[metric])
-      .slice(0, 3);
+      .slice(0, 1);
   };
 
   const formatRule = (rule, color) => (
@@ -60,17 +60,17 @@ const MarketBasket = () => {
       </div>
 
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-blue-600 mb-2">⭐ Top 3 by Support</h3>
+        <h3 className="text-lg font-semibold text-blue-600 mb-2">⭐ Top Combinations by Support</h3>
         {getTopRules("support").map((rule) => formatRule(rule, "blue"))}
       </div>
 
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-green-600 mb-2">🚀 Top 3 by Confidence</h3>
+        <h3 className="text-lg font-semibold text-green-600 mb-2">🚀 Top Combinations by Confidence</h3>
         {getTopRules("confidence").map((rule) => formatRule(rule, "green"))}
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold text-purple-600 mb-2">📈 Top 3 by Lift</h3>
+        <h3 className="text-lg font-semibold text-purple-600 mb-2">📈 Top Combinations by Lift</h3>
         {getTopRules("lift").map((rule) => formatRule(rule, "purple"))}
       </div>
     </motion.div>

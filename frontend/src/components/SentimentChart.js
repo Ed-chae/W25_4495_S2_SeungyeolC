@@ -26,6 +26,7 @@ function SentimentChart() {
               total_reviews: total,
               positive_pct: parseFloat(positive_pct),
               negative_pct: parseFloat(negative_pct),
+              most_common_review: item.most_common_review || "N/A",
             };
           });
 
@@ -85,6 +86,7 @@ function SentimentChart() {
                   <th className="px-4 py-2 border text-green-600">👍 Positive %</th>
                   <th className="px-4 py-2 border text-red-600">👎 Negative %</th>
                   <th className="px-4 py-2 border">🧾 Total Reviews</th>
+                  <th className="px-4 py-2 border">💬 Most Common Review</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -101,6 +103,11 @@ function SentimentChart() {
                       {row.negative_pct}%
                     </td>
                     <td className="px-4 py-2 border">{row.total_reviews}</td>
+                    <td className="px-4 py-2 border text-left text-gray-600">
+                      {row.most_common_review?.length > 100
+                        ? row.most_common_review.slice(0, 100) + "..."
+                        : row.most_common_review}
+                    </td>
                   </tr>
                 ))}
               </tbody>

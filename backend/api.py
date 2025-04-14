@@ -12,6 +12,7 @@ from demand_forecasting import forecast_demand
 from product_recommendation import recommend_products
 from market_basket_analysis import market_basket_analysis
 from menu_category_analysis import categorize_menu_items_hf
+from collections import defaultdict, Counter
 
 
 router = APIRouter()
@@ -91,44 +92,52 @@ def reset_restaurant_orders():
 # -----------------------------------
 @router.get("/sentiment-results/")
 def get_sentiment_summary(db: Session = Depends(get_db)):
-    """Returns only summarized sentiment per item (grouped by item)."""
+    """Returns summarized sentiment per item, including most common review."""
     sales_reviews = db.query(SalesData).all()
     restaurant_reviews = db.query(RestaurantOrder).all()
 
-    summary = {}  # ✅ Define it here
+    summary = defaultdict(lambda: {
+        "positive": 0,
+        "negative": 0,
+        "reviews": []
+    })
 
+    # Analyze sentiment and gather reviews
     for r in sales_reviews:
         item = r.product
-        sentiment = analyze_sentiment(r.review)["label"]
-        if item not in summary:
-            summary[item] = {"positive": 0, "negative": 0}
-        if sentiment == "POSITIVE":
-            summary[item]["positive"] += 1
-        else:
-            summary[item]["negative"] += 1
+        if item and r.review:
+            sentiment = analyze_sentiment(r.review)["label"]
+            summary[item]["reviews"].append(r.review.strip())
+            if sentiment == "POSITIVE":
+                summary[item]["positive"] += 1
+            else:
+                summary[item]["negative"] += 1
 
     for r in restaurant_reviews:
         item = r.menu_item
-        sentiment = analyze_sentiment(r.review)["label"]
-        if item not in summary:
-            summary[item] = {"positive": 0, "negative": 0}
-        if sentiment == "POSITIVE":
-            summary[item]["positive"] += 1
-        else:
-            summary[item]["negative"] += 1
+        if item and r.review:
+            sentiment = analyze_sentiment(r.review)["label"]
+            summary[item]["reviews"].append(r.review.strip())
+            if sentiment == "POSITIVE":
+                summary[item]["positive"] += 1
+            else:
+                summary[item]["negative"] += 1
 
     result = []
     for item, stats in summary.items():
         total = stats["positive"] + stats["negative"]
         negative_percent = (stats["negative"] / total * 100) if total else 0
+        most_common_review = Counter(stats["reviews"]).most_common(1)
         result.append({
             "item": item,
             "positive": stats["positive"],
             "negative": stats["negative"],
+            "total_reviews": total,
+            "most_common_review": most_common_review[0][0] if most_common_review else "",
             "summary": f"{round(negative_percent, 1)}% negative"
         })
 
-    return {"summary": result}  # ✅ Fix: this must be wrapped in an object
+    return {"summary": result}
 
 
 # -----------------------------------

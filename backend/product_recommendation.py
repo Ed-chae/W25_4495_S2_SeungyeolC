@@ -32,7 +32,7 @@ class RecommendationNN(nn.Module):
 # -----------------------------------
 # 📥 Fetch Restaurant Purchases
 # -----------------------------------
-def fetch_purchase_data():
+def fetch_purchase_data(verbose=False):
     session = SessionLocal()
     orders = session.query(RestaurantOrder).filter(RestaurantOrder.menu_item != None).all()
     session.close()
@@ -47,6 +47,9 @@ def fetch_purchase_data():
     df.columns = df.columns.str.strip().str.lower()
     if "order id" in df.columns:
         df.rename(columns={"order id": "order_id"}, inplace=True)
+
+    if verbose:
+        print("✅ Available customer_ids:", df["customer_id"].unique()[:5].tolist())
 
     return df
 
@@ -100,7 +103,7 @@ def train_neural_network(df):
 # 🔮 Recommend Products
 # -----------------------------------
 def recommend_products(user_id: str):
-    df = fetch_purchase_data()
+    df = fetch_purchase_data(verbose=True)
     if df.empty:
         return {"error": "No purchase data available for recommendations."}
 
@@ -114,7 +117,9 @@ def recommend_products(user_id: str):
 
     user_idx = user_to_idx.get(user_id_int)
     if user_idx is None:
-        return {"error": f"User {user_id} not found."}
+        return {
+            "error": f"User {user_id} not found. Try one of these IDs: {list(user_to_idx.keys())[:5]}"
+        }
 
     item_scores = []
     for item, idx in item_to_idx.items():
