@@ -104,9 +104,6 @@ Intelligent_Business_Analytics_System/
 │ │ ├── index.js # React Index file 
 │ │ ├── styles.css # CSS Styles 
 │── tests/ # Unit Tests 
-│ ├── test_file_processing.py 
-│ ├── test_revenue_forecasting.py 
-│ ├── test_sentiment_analysis.py 
 │── DocumentsAndReports/ # Documentation
 │── README.md # Project Documentation
 ```
